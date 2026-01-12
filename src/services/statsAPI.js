@@ -33,11 +33,18 @@ export const fetchStatIds = async (game, statCache) => {
 
     const statsData = await response.json();
     console.log('[STATS] Response structure:', Object.keys(statsData));
-    console.log('[STATS] Has result?', !!statsData.result);
-    console.log('[STATS] Result length:', statsData.result?.length);
-    if (!statsData.result) {
-      console.error('[STATS] ERROR: statsData.result is undefined!', statsData);
+
+    if (statsData.error) {
+      console.error('[STATS] API returned error:', JSON.stringify(statsData.error));
+      return null;
     }
+
+    if (!statsData.result) {
+      console.error('[STATS] ERROR: No result field in response!', statsData);
+      return null;
+    }
+
+    console.log('[STATS] ✅ Stats fetched successfully:', statsData.result.length, 'categories');
     return statsData;
   } catch (error) {
     console.error('[STATS] Error fetching stat IDs:', error.message);
