@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(tree:*)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)",
+      "Bash(curl:*)",
+      "Bash(dir:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(start:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(powershell:*)",
+      "Bash(timeout:*)",
+      "Bash(node proxy-server.js:*)",
+      "Bash(del temp_items.json)",
+      "Bash(ping:*)",
+      "Bash(node:*)",
+      "Bash(test:*)",
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
