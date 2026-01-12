@@ -1,16 +1,67 @@
 // src/services/statsAPI.js
 import { API_ENDPOINTS } from '../config/apiConfig';
 
+const STATS_CACHE_KEY = 'poe_stats_cache';
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
+ * Gets cached stats from localStorage
+ */
+const getCachedStats = (game) => {
+  try {
+    const cached = localStorage.getItem(`${STATS_CACHE_KEY}_${game}`);
+    if (!cached) return null;
+
+    const { data, timestamp } = JSON.parse(cached);
+    const age = Date.now() - timestamp;
+
+    if (age > CACHE_DURATION) {
+      console.log('[STATS] Cache expired, needs refresh');
+      localStorage.removeItem(`${STATS_CACHE_KEY}_${game}`);
+      return null;
+    }
+
+    console.log(`[STATS] Using localStorage cache (age: ${Math.floor(age / 1000 / 60)} minutes)`);
+    return data;
+  } catch (error) {
+    console.error('[STATS] Error reading cache:', error);
+    return null;
+  }
+};
+
+/**
+ * Saves stats to localStorage
+ */
+const setCachedStats = (game, data) => {
+  try {
+    const cacheData = {
+      data,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(`${STATS_CACHE_KEY}_${game}`, JSON.stringify(cacheData));
+    console.log('[STATS] Stats cached to localStorage');
+  } catch (error) {
+    console.error('[STATS] Error saving to cache:', error);
+  }
+};
+
 /**
  * Fetches stat IDs from the local proxy server
  * @param {string} game - 'poe2' or 'poe1'
- * @param {object} statCache - Current cached stats
+ * @param {object} statCache - Current cached stats (in-memory)
  * @returns {Promise<object|null>} Stats data or null if failed
  */
 export const fetchStatIds = async (game, statCache) => {
+  // Check in-memory cache first
   if (statCache) {
-    console.log('[STATS] Using cached stats');
+    console.log('[STATS] Using in-memory cache');
     return statCache;
+  }
+
+  // Check localStorage cache
+  const cachedStats = getCachedStats(game);
+  if (cachedStats) {
+    return cachedStats;
   }
 
   try {
@@ -45,9 +96,34 @@ export const fetchStatIds = async (game, statCache) => {
     }
 
     console.log('[STATS] ✅ Stats fetched successfully:', statsData.result.length, 'categories');
+
+    // Save to localStorage for future use
+    setCachedStats(game, statsData);
+
     return statsData;
   } catch (error) {
-    console.error('[STATS] Error fetching stat IDs:', error.message);
+    console.error('[STATS] Proxy request failed:', error.message);
+
+    // Fallback: try direct request to PoE API (CORS might block, but worth trying)
+    try {
+      console.log('[STATS] Attempting direct API call as fallback...');
+      const directResponse = await fetch(`https://www.pathofexile.com/api/trade/data/stats?realm=${gameParam}`, {
+        mode: 'cors',
+        credentials: 'omit'
+      });
+
+      if (directResponse.ok) {
+        const directData = await directResponse.json();
+        if (directData.result) {
+          console.log('[STATS] ✅ Direct API call succeeded!', directData.result.length, 'categories');
+          setCachedStats(game, directData);
+          return directData;
+        }
+      }
+    } catch (directError) {
+      console.error('[STATS] Direct API call also failed:', directError.message);
+    }
+
     console.log('[STATS] ⚠️ Stats API not available - URL will work without mod filters');
     return null;
   }
