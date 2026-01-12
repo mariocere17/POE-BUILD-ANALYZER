@@ -79,16 +79,20 @@ module.exports = async (req, res) => {
       });
     };
 
-    // Fetch todas las categorías en paralelo
-    const results = await Promise.all(
+    // Fetch todas las categorías en paralelo con manejo de errores individual
+    const results = await Promise.allSettled(
       categoryList.map(cat => fetchCategory(cat))
     );
 
-    // Combinar todos los items en un único array
+    // Combinar todos los items exitosos
     const allItems = [];
-    results.forEach(result => {
-      if (result.data && result.data.items) {
-        allItems.push(...result.data.items);
+    const errors = [];
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled' && result.value.data && result.value.data.items) {
+        allItems.push(...result.value.data.items);
+      } else if (result.status === 'rejected') {
+        errors.push({ category: categoryList[index], error: result.reason.message });
       }
     });
 
@@ -96,9 +100,11 @@ module.exports = async (req, res) => {
     res.status(200).json({
       items: allItems,
       categories: categoryList,
-      totalItems: allItems.length
+      totalItems: allItems.length,
+      errors: errors.length > 0 ? errors : undefined
     });
   } catch (error) {
+    console.error('Multi-category fetch error:', error);
     res.status(500).json({
       error: 'Failed to fetch multi-category data',
       details: error.message
