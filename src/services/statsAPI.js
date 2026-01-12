@@ -8,14 +8,14 @@ import { API_ENDPOINTS } from '../config/apiConfig';
  * @returns {Promise<object|null>} Stats data or null if failed
  */
 export const fetchStatIds = async (game, statCache) => {
-  if (statCache) return statCache;
+  if (statCache) {
+    console.log('[STATS] Using cached stats');
+    return statCache;
+  }
 
   try {
     const gameParam = game === 'poe2' ? 'poe2' : 'poe1';
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Fetching stats from proxy server...');
-    }
+    console.log('[STATS] Fetching stats from proxy server for game:', gameParam);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -27,22 +27,16 @@ export const fetchStatIds = async (game, statCache) => {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Proxy error:', response.status);
-      }
+      console.error('[STATS] API error:', response.status);
       return null;
     }
 
     const statsData = await response.json();
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Stats fetched successfully:', statsData.result?.length, 'categories');
-    }
+    console.log('[STATS] ✅ Stats fetched successfully:', statsData.result?.length, 'categories');
     return statsData;
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching stat IDs:', error);
-      console.log('⚠️ Stats API not available - URL will work without mod filters');
-    }
+    console.error('[STATS] Error fetching stat IDs:', error.message);
+    console.log('[STATS] ⚠️ Stats API not available - URL will work without mod filters');
     return null;
   }
 };
@@ -78,24 +72,18 @@ export const findStatId = (stats, normalizedMod, modType) => {
         .trim();
 
       if (entryText === cleanMod || entryText === normalizedMod) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`✓ Found: "${normalizedMod}" -> ${entry.id}`);
-        }
+        console.log(`[STATS] ✓ Found: "${normalizedMod}" -> ${entry.id}`);
         return entry.id;
       }
 
       if (cleanMod.length > 10 && entryText.includes(cleanMod.replace(/^# /, '').replace(/^#% /, ''))) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`✓ Found (partial): "${normalizedMod}" -> ${entry.id}`);
-        }
+        console.log(`[STATS] ✓ Found (partial): "${normalizedMod}" -> ${entry.id}`);
         return entry.id;
       }
     }
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`✗ Not found: "${normalizedMod}" (${modType})`);
-  }
+  console.log(`[STATS] ✗ Not found: "${normalizedMod}" (${modType})`);
   return null;
 };
 
