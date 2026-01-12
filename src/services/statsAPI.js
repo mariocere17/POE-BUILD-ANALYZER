@@ -32,7 +32,12 @@ export const fetchStatIds = async (game, statCache) => {
     }
 
     const statsData = await response.json();
-    console.log('[STATS] ✅ Stats fetched successfully:', statsData.result?.length, 'categories');
+    console.log('[STATS] Response structure:', Object.keys(statsData));
+    console.log('[STATS] Has result?', !!statsData.result);
+    console.log('[STATS] Result length:', statsData.result?.length);
+    if (!statsData.result) {
+      console.error('[STATS] ERROR: statsData.result is undefined!', statsData);
+    }
     return statsData;
   } catch (error) {
     console.error('[STATS] Error fetching stat IDs:', error.message);
