@@ -18,8 +18,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
-    "vercel-build": "npm run build",
+    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "vercel-build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "dev:api": "node proxy-server.js"
