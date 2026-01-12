@@ -8,9 +8,11 @@
 const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
 
 // URL del proxy server según el entorno
+// En producción (Vercel), las funciones serverless están en la misma URL que el frontend
+// En desarrollo, usar el proxy-server local
 export const API_BASE_URL = isDevelopment
   ? 'http://localhost:3001'
-  : process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  : (process.env.REACT_APP_API_URL || '');
 
 // Endpoints de la API
 export const API_ENDPOINTS = {
