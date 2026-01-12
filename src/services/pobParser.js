@@ -1,5 +1,6 @@
 // src/services/pobParser.js
 import { API_ENDPOINTS, isValidPoBURL } from '../config/apiConfig';
+import pako from 'pako';
 
 /**
  * Fetches raw PoB code from pobb.in URL
@@ -91,56 +92,20 @@ export const parsePoB = async (code) => {
     const charData = decoded.split('').map(x => x.charCodeAt(0));
     const binData = new Uint8Array(charData);
 
-    // Intentar con deflate-raw primero (sin headers ZLIB)
-    let result;
+    // Usar pako para descomprimir (más robusto que DecompressionStream)
     try {
-      const ds = new DecompressionStream('deflate-raw');
-      const writer = ds.writable.getWriter();
-      writer.write(binData);
-      writer.close();
-
-      const reader = ds.readable.getReader();
-      const chunks = [];
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-      }
-
-      const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-      result = new Uint8Array(totalLength);
-      let offset = 0;
-      for (const chunk of chunks) {
-        result.set(chunk, offset);
-        offset += chunk.length;
-      }
-    } catch (deflateError) {
-      // Si falla deflate-raw, intentar con deflate normal
-      const ds = new DecompressionStream('deflate');
-      const writer = ds.writable.getWriter();
-      writer.write(binData);
-      writer.close();
-
-      const reader = ds.readable.getReader();
-      const chunks = [];
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-      }
-
-      const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-      result = new Uint8Array(totalLength);
-      let offset = 0;
-      for (const chunk of chunks) {
-        result.set(chunk, offset);
-        offset += chunk.length;
+      // Intentar con inflate (maneja automáticamente zlib y raw deflate)
+      xmlText = pako.inflate(binData, { to: 'string' });
+    } catch (pakoError) {
+      console.error('Pako inflate failed, trying inflateRaw:', pakoError);
+      try {
+        // Fallback: intentar con inflateRaw (deflate sin headers)
+        xmlText = pako.inflateRaw(binData, { to: 'string' });
+      } catch (rawError) {
+        console.error('Both pako methods failed:', rawError);
+        throw new Error('Failed to decompress PoB code. The compression format may be invalid.');
       }
     }
-
-    xmlText = new TextDecoder().decode(result);
   } catch (err) {
     console.error('Decompression error:', err);
     throw new Error('Código PoB inválido. Asegúrate de copiar el código completo. Error: ' + err.message);
