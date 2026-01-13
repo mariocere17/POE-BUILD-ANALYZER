@@ -124,7 +124,24 @@ export const fetchStatIds = async (game, statCache) => {
       console.error('[STATS] Direct API call also failed:', directError.message);
     }
 
-    console.log('[STATS] ⚠️ Stats API not available - URL will work without mod filters');
+    // Final fallback: try to load static JSON file
+    try {
+      console.log('[STATS] Attempting to load static fallback file...');
+      const fallbackResponse = await fetch(`/data/${gameParam}-stats.json`);
+
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        if (fallbackData.result) {
+          console.log('[STATS] ✅ Static fallback loaded successfully!', fallbackData.result.length, 'categories');
+          setCachedStats(game, fallbackData);
+          return fallbackData;
+        }
+      }
+    } catch (fallbackError) {
+      console.error('[STATS] Static fallback also failed:', fallbackError.message);
+    }
+
+    console.log('[STATS] ⚠️ All methods failed - URL will work without mod filters');
     return null;
   }
 };
