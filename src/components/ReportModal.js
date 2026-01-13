@@ -192,7 +192,12 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
         formData.append('screenshot', screenshot);
       }
 
-      const response = await fetch('/api/report-bug', {
+      // Use proxy server URL in development, relative path in production
+      const apiUrl = process.env.NODE_ENV === 'development'
+        ? 'http://localhost:3001/api/report-bug'
+        : '/api/report-bug';
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData // No Content-Type header - browser will set it with boundary
       });

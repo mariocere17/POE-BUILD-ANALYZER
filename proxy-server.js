@@ -2,6 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const https = require('https');
 const zlib = require('zlib');
+const formidable = require('formidable');
+const FormData = require('form-data');
+const fs = require('fs').promises;
+const fetch = require('node-fetch');
+require('dotenv').config({ path: '.env.local' });
 
 const app = express();
 
@@ -10,7 +15,8 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
     ? process.env.FRONTEND_URL || 'http://localhost:3000'
     : '*',
-  methods: ['GET'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
   maxAge: 86400, // 24 horas
 };
 
@@ -1129,10 +1135,169 @@ app.get('/api/pob/fetch', async (req, res) => {
   }
 });
 
+// Bug Report Endpoint with Screenshot Support
+app.post('/api/report-bug', async (req, res) => {
+  console.log('🐛 Bug report received');
+
+  try {
+    // Check if webhook is configured
+    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+
+    if (!webhookUrl) {
+      console.error('❌ DISCORD_WEBHOOK_URL not configured in .env.local');
+      return res.status(500).json({ error: 'Report system not configured' });
+    }
+
+    // Parse multipart form data
+    const form = new formidable.IncomingForm({
+      maxFileSize: 5 * 1024 * 1024, // 5MB max
+      keepExtensions: true,
+      allowEmptyFiles: false,
+    });
+
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        console.error('❌ Form parse error:', err);
+        return res.status(400).json({ error: 'Invalid form data' });
+      }
+
+      // Extract fields (formidable returns arrays in v3)
+      const description = Array.isArray(fields.description) ? fields.description[0] : fields.description;
+      const email = Array.isArray(fields.email) ? fields.email[0] : fields.email;
+      const browser = Array.isArray(fields.browser) ? fields.browser[0] : fields.browser;
+      const game = Array.isArray(fields.game) ? fields.game[0] : fields.game;
+      const league = Array.isArray(fields.league) ? fields.league[0] : fields.league;
+      const url = Array.isArray(fields.url) ? fields.url[0] : fields.url;
+
+      // Validate input
+      if (!description || description.trim().length < 10) {
+        return res.status(400).json({
+          error: 'Description must be at least 10 characters long'
+        });
+      }
+
+      // Get screenshot file if provided
+      const screenshot = Array.isArray(files.screenshot) ? files.screenshot[0] : files.screenshot;
+
+      // Validate screenshot if provided
+      if (screenshot) {
+        if (!screenshot.mimetype?.startsWith('image/')) {
+          return res.status(400).json({
+            error: 'Screenshot must be an image file'
+          });
+        }
+        if (screenshot.size > 5 * 1024 * 1024) {
+          return res.status(400).json({
+            error: 'Screenshot must be smaller than 5MB'
+          });
+        }
+      }
+
+      // Create Discord embed
+      const embed = {
+        embeds: [{
+          title: '🐛 New Bug Report',
+          color: 0xFF0000,
+          description: description.trim(),
+          fields: [
+            {
+              name: '📧 Contact',
+              value: email ? email.trim() : 'Anonymous',
+              inline: true
+            },
+            {
+              name: '🌐 Browser',
+              value: (browser || 'Unknown').slice(0, 100),
+              inline: true
+            },
+            {
+              name: '🎮 Game',
+              value: game || 'Unknown',
+              inline: true
+            },
+            {
+              name: '🏆 League',
+              value: league || 'Unknown',
+              inline: true
+            },
+            {
+              name: '🔗 Page URL',
+              value: (url || 'Unknown').slice(0, 200),
+              inline: false
+            }
+          ],
+          timestamp: new Date().toISOString(),
+          footer: {
+            text: 'PoE Build Analyzer - Local Dev'
+          }
+        }]
+      };
+
+      // Add screenshot info if provided
+      if (screenshot) {
+        embed.embeds[0].fields.push({
+          name: '📸 Screenshot',
+          value: 'Attached below',
+          inline: false
+        });
+      }
+
+      // Send to Discord
+      try {
+        const formData = new FormData();
+        formData.append('payload_json', JSON.stringify(embed));
+
+        // Add screenshot if provided
+        if (screenshot) {
+          const fileBuffer = await fs.readFile(screenshot.filepath);
+          formData.append('file', fileBuffer, {
+            filename: screenshot.originalFilename || 'screenshot.png',
+            contentType: screenshot.mimetype,
+          });
+        }
+
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          body: formData,
+          headers: formData.getHeaders(),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Discord webhook error:', response.status, errorText);
+          return res.status(500).json({ error: 'Failed to send report to Discord' });
+        }
+
+        console.log('✅ Bug report sent to Discord successfully');
+        return res.status(200).json({
+          success: true,
+          message: 'Report submitted successfully. Thank you!'
+        });
+
+      } catch (error) {
+        console.error('❌ Error sending to Discord:', error);
+        return res.status(500).json({
+          error: 'Failed to send report',
+          details: error.message
+        });
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Report bug error:', error);
+    return res.status(500).json({
+      error: 'Failed to submit report. Please try again later.'
+    });
+  }
+});
+
 app.listen(3001, () => {
   console.log('✅ Proxy server running on http://localhost:3001');
   console.log('📡 Ready to proxy requests to PoE API');
   console.log('📦 Compression support: gzip, deflate, brotli');
+  console.log('\n🐛 Bug Report System:');
+  console.log('   Discord Webhook:', process.env.DISCORD_WEBHOOK_URL ? '✅ Configured' : '❌ NOT CONFIGURED');
+  console.log('   Endpoint: http://localhost:3001/api/report-bug');
   console.log('\n🧪 Test Endpoints:');
   console.log('   Leagues: http://localhost:3001/api/test-leagues');
   console.log('   Categories: http://localhost:3001/api/poe2scout/categories/test');
