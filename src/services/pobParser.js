@@ -167,6 +167,28 @@ export const parsePoB = async (code) => {
     let name = lines[nameLineIdx] || lines[0];
     let baseType = lines[nameLineIdx + 1] || lines[1] || name;
 
+    // Fix for magic/rare items where baseType might be "Unique ID:" instead of actual base
+    // This happens with charms and other items that don't have a separate basetype line
+    if (baseType.startsWith('Unique ID:') || baseType.startsWith('Item Level:') || baseType.startsWith('Quality:')) {
+      // For magic items with prefix/suffix (e.g., "Aqueous Golden Charm of the Eternal")
+      // Extract the base type from the name
+      if (rarity === 'magic') {
+        // Try to extract base from magic item name
+        // Pattern: "Prefix BaseType of Suffix" or just "Prefix BaseType"
+        const charmMatch = name.match(/(Golden Charm|Silver Charm|Thawing Charm|Iron Charm|Jade Charm|Amber Charm|Cobalt Charm|Crimson Charm|Viridian Charm)/i);
+        if (charmMatch) {
+          baseType = charmMatch[1];
+        } else {
+          // Generic fallback: take last 2-3 words as base
+          const words = name.split(' ');
+          baseType = words.length >= 2 ? words.slice(-2).join(' ') : name;
+        }
+      } else {
+        // For other rarities, use the name as baseType
+        baseType = name;
+      }
+    }
+
     if (isCharm) {
       console.log(`[CHARM DEBUG] Rarity: ${rarity}, Name: ${name}, BaseType: ${baseType}`);
     }
@@ -327,12 +349,13 @@ export const parsePoB = async (code) => {
   // Debug: Log charms that were parsed
   const charms = parsedItems.filter(item =>
     item.baseType?.toLowerCase().includes('charm') ||
-    item.name?.toLowerCase().includes('charm')
+    item.name?.toLowerCase().includes('charm') ||
+    item.rawText?.toLowerCase().includes('charm')
   );
   if (charms.length > 0) {
     console.log(`\n[CHARM DEBUG] Successfully parsed ${charms.length} charms:`);
     charms.forEach((charm, i) => {
-      console.log(`${i + 1}. ${charm.name} (${charm.rarity}) - ${charm.explicitMods.length} explicit mods`);
+      console.log(`${i + 1}. ${charm.name} (${charm.rarity}) - BaseType: ${charm.baseType} - ${charm.explicitMods.length} explicit mods`);
     });
   }
 
