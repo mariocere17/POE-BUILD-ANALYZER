@@ -6,6 +6,9 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch: # Permite ejecución manual
 
+permissions:
+  contents: write  # Permite hacer push al repositorio
+
 jobs:
   update-stats:
     runs-on: ubuntu-latest
