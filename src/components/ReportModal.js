@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Bug, Lightbulb, Send, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { X, Bug, Lightbulb, Send, AlertCircle, CheckCircle, Clock, Image, Trash2 } from 'lucide-react';
 
 // ⚙️ CONFIGURABLE RATE LIMITS (easy to edit)
 const RATE_LIMITS = {
@@ -20,6 +20,8 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState({ bug: 0, feature: 0 });
+  const [screenshot, setScreenshot] = useState(null);
+  const [screenshotPreview, setScreenshotPreview] = useState(null);
 
   // Check rate limits on mount and when modal opens
   useEffect(() => {
@@ -29,6 +31,60 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
       return () => clearInterval(interval);
     }
   }, [isOpen]);
+
+  // Paste event listener for screenshots from clipboard
+  useEffect(() => {
+    if (!isOpen || reportType !== 'bug') return;
+
+    const handlePaste = (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      // Find image in clipboard
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+
+          const blob = item.getAsFile();
+          if (!blob) return;
+
+          // Validate file size (5MB max)
+          const maxSize = 5 * 1024 * 1024;
+          if (blob.size > maxSize) {
+            setSubmitStatus({ type: 'error', message: 'Image must be smaller than 5MB' });
+            return;
+          }
+
+          // Create a File object from the blob
+          const file = new File([blob], `pasted-screenshot-${Date.now()}.png`, {
+            type: blob.type,
+          });
+
+          setScreenshot(file);
+
+          // Create preview
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setScreenshotPreview(reader.result);
+          };
+          reader.readAsDataURL(file);
+          setSubmitStatus({ type: 'success', message: 'Screenshot pasted successfully!' });
+
+          // Clear success message after 2 seconds
+          setTimeout(() => {
+            setSubmitStatus(null);
+          }, 2000);
+
+          break;
+        }
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [isOpen, reportType]);
 
   const updateTimeRemaining = () => {
     const now = Date.now();
@@ -62,6 +118,39 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
 
   if (!isOpen) return null;
 
+  const handleScreenshotChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setSubmitStatus({ type: 'error', message: 'Please select an image file' });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      setSubmitStatus({ type: 'error', message: 'Image must be smaller than 5MB' });
+      return;
+    }
+
+    setScreenshot(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setScreenshotPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+    setSubmitStatus(null);
+  };
+
+  const handleRemoveScreenshot = () => {
+    setScreenshot(null);
+    setScreenshotPreview(null);
+  };
+
   const handleBugReport = async (e) => {
     e.preventDefault();
 
@@ -90,19 +179,22 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
     setSubmitStatus(null);
 
     try {
+      // Use FormData to send both text and file
+      const formData = new FormData();
+      formData.append('description', description.trim());
+      formData.append('email', email.trim());
+      formData.append('browser', navigator.userAgent);
+      formData.append('game', gameConfig?.selectedGame || 'unknown');
+      formData.append('league', gameConfig?.selectedLeague || 'unknown');
+      formData.append('url', window.location.href);
+
+      if (screenshot) {
+        formData.append('screenshot', screenshot);
+      }
+
       const response = await fetch('/api/report-bug', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          description: description.trim(),
-          email: email.trim(),
-          browser: navigator.userAgent,
-          game: gameConfig?.selectedGame || 'unknown',
-          league: gameConfig?.selectedLeague || 'unknown',
-          url: window.location.href
-        })
+        body: formData // No Content-Type header - browser will set it with boundary
       });
 
       const data = await response.json();
@@ -114,6 +206,8 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
         setSubmitStatus({ type: 'success', message: data.message || 'Report submitted successfully!' });
         setDescription('');
         setEmail('');
+        setScreenshot(null);
+        setScreenshotPreview(null);
         setTimeout(() => {
           onClose();
           setSubmitStatus(null);
@@ -183,6 +277,8 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
     setEmail('');
     setHoneypot('');
     setSubmitStatus(null);
+    setScreenshot(null);
+    setScreenshotPreview(null);
   };
 
   const handleSelectReportType = (type) => {
@@ -356,6 +452,63 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                 <p className="text-sm text-gray-500 mt-1">
                   Optional - if you want us to follow up with you
                 </p>
+              </div>
+
+              {/* Screenshot Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Screenshot (optional)
+                </label>
+
+                {!screenshotPreview ? (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleScreenshotChange}
+                        className="hidden"
+                        id="screenshot-input"
+                        disabled={isSubmitting}
+                      />
+                      <label
+                        htmlFor="screenshot-input"
+                        className="flex items-center justify-center space-x-2 w-full px-4 py-3 bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer"
+                      >
+                        <Image size={20} />
+                        <span>Click to upload or press Ctrl+V to paste</span>
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-500 text-center">
+                      💡 Tip: Take a screenshot (Win+Shift+S or Snipping Tool) and paste it here
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <img
+                      src={screenshotPreview}
+                      alt="Screenshot preview"
+                      className="w-full h-48 object-contain bg-gray-800 rounded-lg border border-gray-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveScreenshot}
+                      className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                      disabled={isSubmitting}
+                      title="Remove screenshot"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <p className="text-sm text-gray-400 mt-2">
+                      {screenshot.name} ({(screenshot.size / 1024).toFixed(1)} KB)
+                    </p>
+                  </div>
+                )}
+                {!screenshotPreview && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Helps us understand the issue better
+                  </p>
+                )}
               </div>
 
               {/* Status Messages */}

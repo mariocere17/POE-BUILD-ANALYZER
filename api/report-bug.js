@@ -1,7 +1,10 @@
 /**
  * Bug Report Serverless Function
- * Sends bug reports to Discord webhook with rate limiting
+ * Sends bug reports to Discord webhook with rate limiting and screenshot support
  */
+
+const formidable = require('formidable');
+const fs = require('fs').promises;
 
 // In-memory store for rate limiting (resets when function cold-starts)
 const rateLimitStore = new Map();
@@ -9,6 +12,13 @@ const rateLimitStore = new Map();
 // Rate limit: 5 reports per IP per hour
 const RATE_LIMIT = 5;
 const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in ms
+
+// Disable body parsing, we'll handle it with formidable
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 function checkRateLimit(ip) {
   const now = Date.now();
@@ -89,6 +99,56 @@ function createDiscordEmbed(data) {
   };
 }
 
+// Parse multipart form data
+function parseForm(req) {
+  return new Promise((resolve, reject) => {
+    const form = formidable({
+      maxFileSize: 5 * 1024 * 1024, // 5MB max
+      keepExtensions: true,
+      allowEmptyFiles: false,
+    });
+
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve({ fields, files });
+    });
+  });
+}
+
+// Send to Discord with optional file attachment
+async function sendToDiscord(webhookUrl, payload, screenshotFile = null) {
+  const FormData = require('form-data');
+  const formData = new FormData();
+
+  // Add the JSON payload
+  formData.append('payload_json', JSON.stringify(payload));
+
+  // Add screenshot if provided
+  if (screenshotFile) {
+    try {
+      const fileBuffer = await fs.readFile(screenshotFile.filepath);
+      formData.append('file', fileBuffer, {
+        filename: screenshotFile.originalFilename || 'screenshot.png',
+        contentType: screenshotFile.mimetype,
+      });
+    } catch (error) {
+      console.error('Error reading screenshot file:', error);
+      // Continue without screenshot if file read fails
+    }
+  }
+
+  const response = await fetch(webhookUrl, {
+    method: 'POST',
+    body: formData,
+    headers: formData.getHeaders(),
+  });
+
+  return response;
+}
+
 export default async function handler(req, res) {
   // CORS headers
   const origin = req.headers.origin;
@@ -133,13 +193,39 @@ export default async function handler(req, res) {
       });
     }
 
-    // Validate input
-    const { description, email, browser, game, league, url } = req.body;
+    // Parse form data
+    const { fields, files } = await parseForm(req);
 
+    // Extract fields (formidable returns arrays)
+    const description = Array.isArray(fields.description) ? fields.description[0] : fields.description;
+    const email = Array.isArray(fields.email) ? fields.email[0] : fields.email;
+    const browser = Array.isArray(fields.browser) ? fields.browser[0] : fields.browser;
+    const game = Array.isArray(fields.game) ? fields.game[0] : fields.game;
+    const league = Array.isArray(fields.league) ? fields.league[0] : fields.league;
+    const url = Array.isArray(fields.url) ? fields.url[0] : fields.url;
+
+    // Validate input
     if (!description || description.trim().length < 10) {
       return res.status(400).json({
         error: 'Description must be at least 10 characters long'
       });
+    }
+
+    // Get screenshot file if provided
+    const screenshot = Array.isArray(files.screenshot) ? files.screenshot[0] : files.screenshot;
+
+    // Validate screenshot if provided
+    if (screenshot) {
+      if (!screenshot.mimetype?.startsWith('image/')) {
+        return res.status(400).json({
+          error: 'Screenshot must be an image file'
+        });
+      }
+      if (screenshot.size > 5 * 1024 * 1024) {
+        return res.status(400).json({
+          error: 'Screenshot must be smaller than 5MB'
+        });
+      }
     }
 
     // Create Discord embed
@@ -152,14 +238,17 @@ export default async function handler(req, res) {
       url
     });
 
+    // Add screenshot info to embed if provided
+    if (screenshot) {
+      payload.embeds[0].fields.push({
+        name: '📸 Screenshot',
+        value: 'Attached below',
+        inline: false
+      });
+    }
+
     // Send to Discord
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload)
-    });
+    const response = await sendToDiscord(webhookUrl, payload, screenshot);
 
     if (!response.ok) {
       console.error('Discord webhook error:', response.status, await response.text());
