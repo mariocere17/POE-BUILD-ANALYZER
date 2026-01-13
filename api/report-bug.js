@@ -5,6 +5,8 @@
 
 const formidable = require('formidable');
 const fs = require('fs').promises;
+const FormData = require('form-data');
+const fetch = require('node-fetch');
 
 // In-memory store for rate limiting (resets when function cold-starts)
 const rateLimitStore = new Map();
@@ -13,8 +15,8 @@ const rateLimitStore = new Map();
 const RATE_LIMIT = 5;
 const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in ms
 
-// Disable body parsing, we'll handle it with formidable
-export const config = {
+// Vercel configuration - disable body parsing
+module.exports.config = {
   api: {
     bodyParser: false,
   },
@@ -120,7 +122,6 @@ function parseForm(req) {
 
 // Send to Discord with optional file attachment
 async function sendToDiscord(webhookUrl, payload, screenshotFile = null) {
-  const FormData = require('form-data');
   const formData = new FormData();
 
   // Add the JSON payload
@@ -149,7 +150,7 @@ async function sendToDiscord(webhookUrl, payload, screenshotFile = null) {
   return response;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS headers
   const origin = req.headers.origin;
   const allowedOrigins = [
