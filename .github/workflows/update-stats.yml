@@ -1,0 +1,46 @@
+name: Update PoE Stats Daily
+
+on:
+  schedule:
+    # Ejecutar diariamente a las 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Permite ejecución manual
+
+jobs:
+  update-stats:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch PoE2 Stats
+        run: |
+          curl -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+               -H "Accept: application/json" \
+               -H "Referer: https://www.pathofexile.com/trade2/" \
+               "https://www.pathofexile.com/api/trade/data/stats?realm=poe2" \
+               -o public/data/poe2-stats.json
+
+      - name: Check if file was updated
+        id: check_changes
+        run: |
+          if git diff --quiet public/data/poe2-stats.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push if changed
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add public/data/poe2-stats.json
+          git commit -m "chore: update PoE2 stats (automated)"
+          git push
