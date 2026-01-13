@@ -1,17 +1,85 @@
-import React, { useState } from 'react';
-import { X, Bug, Lightbulb, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Bug, Lightbulb, Send, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+
+// ⚙️ CONFIGURABLE RATE LIMITS (easy to edit)
+const RATE_LIMITS = {
+  bugReport: 5 * 60 * 1000,        // 5 minutes in milliseconds
+  featureRequest: 60 * 60 * 1000,  // 1 hour in milliseconds
+};
+
+const STORAGE_KEYS = {
+  lastBugReport: 'poe_analyzer_last_bug_report',
+  lastFeatureRequest: 'poe_analyzer_last_feature_request',
+};
 
 const ReportModal = ({ isOpen, onClose, gameConfig }) => {
   const [reportType, setReportType] = useState(null); // 'bug' or 'feature'
   const [description, setDescription] = useState('');
   const [email, setEmail] = useState('');
+  const [honeypot, setHoneypot] = useState(''); // Bot trap
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null); // 'success', 'error', or null
+  const [submitStatus, setSubmitStatus] = useState(null);
+  const [timeRemaining, setTimeRemaining] = useState({ bug: 0, feature: 0 });
+
+  // Check rate limits on mount and when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      updateTimeRemaining();
+      const interval = setInterval(updateTimeRemaining, 1000); // Update every second
+      return () => clearInterval(interval);
+    }
+  }, [isOpen]);
+
+  const updateTimeRemaining = () => {
+    const now = Date.now();
+    const lastBug = parseInt(localStorage.getItem(STORAGE_KEYS.lastBugReport) || '0');
+    const lastFeature = parseInt(localStorage.getItem(STORAGE_KEYS.lastFeatureRequest) || '0');
+
+    const bugRemaining = Math.max(0, RATE_LIMITS.bugReport - (now - lastBug));
+    const featureRemaining = Math.max(0, RATE_LIMITS.featureRequest - (now - lastFeature));
+
+    setTimeRemaining({
+      bug: bugRemaining,
+      feature: featureRemaining,
+    });
+  };
+
+  const formatTimeRemaining = (ms) => {
+    if (ms === 0) return null;
+
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    }
+    return `${seconds}s`;
+  };
+
+  const canSubmit = (type) => {
+    return type === 'bug' ? timeRemaining.bug === 0 : timeRemaining.feature === 0;
+  };
 
   if (!isOpen) return null;
 
   const handleBugReport = async (e) => {
     e.preventDefault();
+
+    // Check honeypot (bot detection)
+    if (honeypot) {
+      console.log('Bot detected via honeypot');
+      setSubmitStatus({ type: 'error', message: 'Invalid submission detected' });
+      return;
+    }
+
+    // Check rate limit
+    if (!canSubmit('bug')) {
+      setSubmitStatus({
+        type: 'error',
+        message: `Please wait ${formatTimeRemaining(timeRemaining.bug)} before submitting another bug report`
+      });
+      return;
+    }
 
     if (description.trim().length < 10) {
       setSubmitStatus({ type: 'error', message: 'Please provide at least 10 characters' });
@@ -40,6 +108,9 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
       const data = await response.json();
 
       if (response.ok) {
+        // Save timestamp to localStorage
+        localStorage.setItem(STORAGE_KEYS.lastBugReport, Date.now().toString());
+
         setSubmitStatus({ type: 'success', message: data.message || 'Report submitted successfully!' });
         setDescription('');
         setEmail('');
@@ -60,6 +131,19 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
   };
 
   const handleFeatureRequest = () => {
+    // Check rate limit
+    if (!canSubmit('feature')) {
+      setSubmitStatus({
+        type: 'error',
+        message: `Please wait ${formatTimeRemaining(timeRemaining.feature)} before submitting another feature request`
+      });
+      setReportType(null);
+      return;
+    }
+
+    // Save timestamp to localStorage
+    localStorage.setItem(STORAGE_KEYS.lastFeatureRequest, Date.now().toString());
+
     const title = encodeURIComponent('Feature Request: ');
     const body = encodeURIComponent(`
 **Feature Description:**
@@ -89,7 +173,25 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
     setReportType(null);
     setDescription('');
     setEmail('');
+    setHoneypot('');
     setSubmitStatus(null);
+  };
+
+  const handleSelectReportType = (type) => {
+    if (type === 'feature') {
+      // Feature request opens GitHub immediately
+      handleFeatureRequest();
+    } else {
+      // Bug report opens form
+      if (canSubmit('bug')) {
+        setReportType(type);
+      } else {
+        setSubmitStatus({
+          type: 'error',
+          message: `Please wait ${formatTimeRemaining(timeRemaining.bug)} before submitting another bug report`
+        });
+      }
+    }
   };
 
   return (
@@ -118,43 +220,91 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
 
               {/* Bug Report Option */}
               <button
-                onClick={() => setReportType('bug')}
-                className="w-full p-6 bg-gray-800 hover:bg-gray-750 border-2 border-red-500 hover:border-red-400 rounded-lg transition-all group"
+                onClick={() => handleSelectReportType('bug')}
+                disabled={!canSubmit('bug')}
+                className={`w-full p-6 bg-gray-800 border-2 rounded-lg transition-all group ${
+                  canSubmit('bug')
+                    ? 'hover:bg-gray-750 border-red-500 hover:border-red-400'
+                    : 'opacity-60 cursor-not-allowed border-gray-600'
+                }`}
               >
                 <div className="flex items-start space-x-4">
                   <div className="flex-shrink-0">
-                    <Bug size={32} className="text-red-500 group-hover:text-red-400" />
+                    <Bug size={32} className={canSubmit('bug') ? 'text-red-500 group-hover:text-red-400' : 'text-gray-600'} />
                   </div>
                   <div className="text-left flex-1">
                     <h3 className="text-xl font-semibold text-white mb-2">Report a Bug</h3>
                     <p className="text-gray-400">
                       Something not working? Let us know about technical issues, errors, or broken features.
                     </p>
+                    {!canSubmit('bug') && (
+                      <div className="flex items-center space-x-2 mt-3 text-yellow-500">
+                        <Clock size={16} />
+                        <span className="text-sm font-medium">
+                          Available in {formatTimeRemaining(timeRemaining.bug)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </button>
 
               {/* Feature Request Option */}
               <button
-                onClick={() => setReportType('feature')}
-                className="w-full p-6 bg-gray-800 hover:bg-gray-750 border-2 border-blue-500 hover:border-blue-400 rounded-lg transition-all group"
+                onClick={() => handleSelectReportType('feature')}
+                disabled={!canSubmit('feature')}
+                className={`w-full p-6 bg-gray-800 border-2 rounded-lg transition-all group ${
+                  canSubmit('feature')
+                    ? 'hover:bg-gray-750 border-blue-500 hover:border-blue-400'
+                    : 'opacity-60 cursor-not-allowed border-gray-600'
+                }`}
               >
                 <div className="flex items-start space-x-4">
                   <div className="flex-shrink-0">
-                    <Lightbulb size={32} className="text-blue-500 group-hover:text-blue-400" />
+                    <Lightbulb size={32} className={canSubmit('feature') ? 'text-blue-500 group-hover:text-blue-400' : 'text-gray-600'} />
                   </div>
                   <div className="text-left flex-1">
                     <h3 className="text-xl font-semibold text-white mb-2">Request a Feature</h3>
                     <p className="text-gray-400">
                       Have an idea? Suggest new features or improvements (opens GitHub Issues).
                     </p>
+                    {!canSubmit('feature') && (
+                      <div className="flex items-center space-x-2 mt-3 text-yellow-500">
+                        <Clock size={16} />
+                        <span className="text-sm font-medium">
+                          Available in {formatTimeRemaining(timeRemaining.feature)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </button>
+
+              {/* Rate Limit Error Display */}
+              {submitStatus && (
+                <div className="flex items-start space-x-3 p-4 rounded-lg bg-red-900 bg-opacity-30 border border-red-700">
+                  <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-300">{submitStatus.message}</p>
+                </div>
+              )}
             </div>
           ) : reportType === 'bug' ? (
             // Bug Report Form
             <form onSubmit={handleBugReport} className="space-y-4">
+              {/* Honeypot Field - Hidden from users, visible to bots */}
+              <div style={{ position: 'absolute', left: '-9999px', opacity: 0 }} aria-hidden="true">
+                <label htmlFor="website">Website (leave blank)</label>
+                <input
+                  type="text"
+                  id="website"
+                  name="website"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  tabIndex="-1"
+                  autoComplete="off"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Describe the bug <span className="text-red-500">*</span>
@@ -249,22 +399,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                 </button>
               </div>
             </form>
-          ) : (
-            // Feature Request (redirects to GitHub)
-            <div className="text-center py-8">
-              <Lightbulb size={64} className="text-blue-500 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">Opening GitHub Issues...</h3>
-              <p className="text-gray-400">
-                You'll be redirected to GitHub to submit your feature request.
-              </p>
-              <button
-                onClick={() => setReportType(null)}
-                className="mt-6 px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
