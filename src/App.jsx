@@ -1,15 +1,18 @@
 // src/App.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useBuildAnalyzer } from './hooks/useBuildAnalyzer';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import BuildForm from './components/BuildAnalyzer/BuildForm';
 import ItemList from './components/BuildAnalyzer/ItemList';
 import EditItemModal from './components/BuildAnalyzer/EditItemModal';
+import ReportModal from './components/ReportModal';
 import CurrencyConverter from './components/PoeNinja/CurrencyConverter';
 import { poe2CurrencyPairs, poe1CurrencyPairs } from './config/currencyPairs';
+import { Bug } from 'lucide-react';
 
 const PoEBuildAnalyzer = () => {
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const {
     pobCode,
     items,
@@ -83,6 +86,26 @@ const PoEBuildAnalyzer = () => {
             onSave={handleSaveItem}
           />
         )}
+
+        {/* Report Modal */}
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          gameConfig={{ selectedGame: game, selectedLeague: league }}
+        />
+
+        {/* Floating Report Button */}
+        <button
+          onClick={() => setIsReportModalOpen(true)}
+          className="fixed bottom-6 right-6 bg-orange-600 hover:bg-orange-700 text-white p-4 rounded-full shadow-lg transition-all hover:scale-110 z-40 group"
+          aria-label="Report an issue"
+          title="Report Bug or Request Feature"
+        >
+          <Bug size={24} />
+          <span className="absolute bottom-full right-0 mb-2 px-3 py-1 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            Report Issue
+          </span>
+        </button>
       </div>
 
       <Footer />
