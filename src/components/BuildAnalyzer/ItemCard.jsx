@@ -40,17 +40,17 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
             )}
           </div>
         </div>
-        <div className="flex gap-2 ml-6">
+        <div className="flex gap-2 ml-6 flex-shrink-0">
           <button
             onClick={() => onEdit(item)}
-            className="p-3 bg-slate-800 hover:bg-cyan-500/20 border-2 border-slate-600 hover:border-cyan-500 rounded-lg transition-all duration-200"
+            className="p-3 bg-slate-800 hover:bg-cyan-500/20 border-2 border-slate-600 hover:border-cyan-500 rounded-lg transition-all duration-200 flex-shrink-0"
             title="Edit filters"
           >
             <Edit2 size={20} className="text-cyan-400" />
           </button>
           <button
             onClick={() => onCopy(item, index)}
-            className="p-3 bg-slate-800 hover:bg-emerald-500/20 border-2 border-slate-600 hover:border-emerald-500 rounded-lg transition-all duration-200"
+            className="p-3 bg-slate-800 hover:bg-emerald-500/20 border-2 border-slate-600 hover:border-emerald-500 rounded-lg transition-all duration-200 flex-shrink-0"
             title="Copy URL"
           >
             {copiedIndex === index ? (
@@ -61,7 +61,7 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
           </button>
           <button
             onClick={() => onOpenTrade(item)}
-            className="p-3 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 rounded-lg transition-all duration-200"
+            className="p-3 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 rounded-lg transition-all duration-200 flex-shrink-0"
             title="Search in Trade"
           >
             <ExternalLink size={20} className="text-white" />

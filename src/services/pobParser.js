@@ -136,6 +136,13 @@ export const parsePoB = async (code) => {
     const lines = itemText.split('\n').map(l => l.trim()).filter(l => l);
     if (lines.length < 1) return;
 
+    // Debug logging for charms
+    const isCharm = itemText.toLowerCase().includes('charm');
+    if (isCharm) {
+      console.log(`\n[CHARM DEBUG] Item ${index + 1}:`);
+      console.log('First 15 lines:', lines.slice(0, 15));
+    }
+
     // Detectar rareza
     let rarity = 'normal';
     let nameLineIdx = 0;
@@ -159,6 +166,10 @@ export const parsePoB = async (code) => {
     // Extraer nombre y tipo base
     let name = lines[nameLineIdx] || lines[0];
     let baseType = lines[nameLineIdx + 1] || lines[1] || name;
+
+    if (isCharm) {
+      console.log(`[CHARM DEBUG] Rarity: ${rarity}, Name: ${name}, BaseType: ${baseType}`);
+    }
 
     // Extraer ilvl
     const ilvlMatch = itemText.match(/Item Level: (\d+)/);
@@ -311,6 +322,18 @@ export const parsePoB = async (code) => {
 
   if (parsedItems.length === 0) {
     throw new Error('No se pudieron extraer items del build. Verifica que el código sea válido.');
+  }
+
+  // Debug: Log charms that were parsed
+  const charms = parsedItems.filter(item =>
+    item.baseType?.toLowerCase().includes('charm') ||
+    item.name?.toLowerCase().includes('charm')
+  );
+  if (charms.length > 0) {
+    console.log(`\n[CHARM DEBUG] Successfully parsed ${charms.length} charms:`);
+    charms.forEach((charm, i) => {
+      console.log(`${i + 1}. ${charm.name} (${charm.rarity}) - ${charm.explicitMods.length} explicit mods`);
+    });
   }
 
   return parsedItems;
