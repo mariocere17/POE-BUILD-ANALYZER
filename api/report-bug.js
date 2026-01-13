@@ -104,7 +104,7 @@ function createDiscordEmbed(data) {
 // Parse multipart form data
 function parseForm(req) {
   return new Promise((resolve, reject) => {
-    const form = formidable({
+    const form = new formidable.IncomingForm({
       maxFileSize: 5 * 1024 * 1024, // 5MB max
       keepExtensions: true,
       allowEmptyFiles: false,
