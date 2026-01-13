@@ -64,8 +64,9 @@ export const fetchStatIds = async (game, statCache) => {
     return cachedStats;
   }
 
+  const gameParam = game === 'poe2' ? 'poe2' : 'poe1';
+
   try {
-    const gameParam = game === 'poe2' ? 'poe2' : 'poe1';
     console.log('[STATS] Fetching stats from proxy server for game:', gameParam);
 
     const controller = new AbortController();
