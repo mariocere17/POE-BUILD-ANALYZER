@@ -67,8 +67,6 @@ export const fetchStatIds = async (game, statCache) => {
   const gameParam = game === 'poe2' ? 'poe2' : 'poe1';
 
   try {
-    console.log('[STATS] Fetching stats from proxy server for game:', gameParam);
-
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
@@ -79,35 +77,26 @@ export const fetchStatIds = async (game, statCache) => {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.error('[STATS] API error:', response.status);
       throw new Error(`API returned ${response.status}`);
     }
 
     const statsData = await response.json();
-    console.log('[STATS] Response structure:', Object.keys(statsData));
 
     if (statsData.error) {
-      console.error('[STATS] API returned error:', JSON.stringify(statsData.error));
       throw new Error('API returned error response');
     }
 
     if (!statsData.result) {
-      console.error('[STATS] ERROR: No result field in response!', statsData);
       throw new Error('No result field in response');
     }
-
-    console.log('[STATS] ✅ Stats fetched successfully:', statsData.result.length, 'categories');
 
     // Save to localStorage for future use
     setCachedStats(game, statsData);
 
     return statsData;
   } catch (error) {
-    console.error('[STATS] Proxy request failed:', error.message);
-
     // Fallback: try direct request to PoE API (CORS might block, but worth trying)
     try {
-      console.log('[STATS] Attempting direct API call as fallback...');
       const directResponse = await fetch(`https://www.pathofexile.com/api/trade/data/stats?realm=${gameParam}`, {
         mode: 'cors',
         credentials: 'omit'
@@ -116,33 +105,29 @@ export const fetchStatIds = async (game, statCache) => {
       if (directResponse.ok) {
         const directData = await directResponse.json();
         if (directData.result) {
-          console.log('[STATS] ✅ Direct API call succeeded!', directData.result.length, 'categories');
           setCachedStats(game, directData);
           return directData;
         }
       }
     } catch (directError) {
-      console.error('[STATS] Direct API call also failed:', directError.message);
+      // Silently continue to static fallback
     }
 
     // Final fallback: try to load static JSON file
     try {
-      console.log('[STATS] Attempting to load static fallback file...');
       const fallbackResponse = await fetch(`/data/${gameParam}-stats.json`);
 
       if (fallbackResponse.ok) {
         const fallbackData = await fallbackResponse.json();
         if (fallbackData.result) {
-          console.log('[STATS] ✅ Static fallback loaded successfully!', fallbackData.result.length, 'categories');
           setCachedStats(game, fallbackData);
           return fallbackData;
         }
       }
     } catch (fallbackError) {
-      console.error('[STATS] Static fallback also failed:', fallbackError.message);
+      // All methods failed
     }
 
-    console.log('[STATS] ⚠️ All methods failed - URL will work without mod filters');
     return null;
   }
 };
@@ -178,18 +163,15 @@ export const findStatId = (stats, normalizedMod, modType) => {
         .trim();
 
       if (entryText === cleanMod || entryText === normalizedMod) {
-        console.log(`[STATS] ✓ Found: "${normalizedMod}" -> ${entry.id}`);
         return entry.id;
       }
 
       if (cleanMod.length > 10 && entryText.includes(cleanMod.replace(/^# /, '').replace(/^#% /, ''))) {
-        console.log(`[STATS] ✓ Found (partial): "${normalizedMod}" -> ${entry.id}`);
         return entry.id;
       }
     }
   }
 
-  console.log(`[STATS] ✗ Not found: "${normalizedMod}" (${modType})`);
   return null;
 };
 

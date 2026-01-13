@@ -83,8 +83,6 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
 
   // Añadir mods si tenemos stats disponibles
   if (stats && stats.result) {
-    console.log('[TRADE] Building stat filters for item:', item.name);
-    console.log('[TRADE] Stats available:', stats.result.length, 'categories');
     const statFilters = [];
 
     // Procesar enchants
@@ -158,20 +156,13 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
 
     // Añadir stats válidos al query
     if (validStatFilters.length > 0) {
-      console.log(`[TRADE] Adding ${validStatFilters.length} valid stat filters`);
       query.query.stats.push({
         type: "and",
         filters: validStatFilters,
         disabled: false
       });
-    } else {
-      console.log('[TRADE] No valid stat filters found!');
     }
-  } else {
-    console.log('[TRADE] ⚠️ Stats API not available - URL will work without mod filters');
   }
-
-  console.log('[TRADE] Final query stats count:', query.query.stats.length);
   const encodedQuery = encodeURIComponent(JSON.stringify(query));
   const leagueParam = league.replace(/ /g, '%20');
 
