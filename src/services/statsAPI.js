@@ -79,7 +79,7 @@ export const fetchStatIds = async (game, statCache) => {
 
     if (!response.ok) {
       console.error('[STATS] API error:', response.status);
-      return null;
+      throw new Error(`API returned ${response.status}`);
     }
 
     const statsData = await response.json();
@@ -87,12 +87,12 @@ export const fetchStatIds = async (game, statCache) => {
 
     if (statsData.error) {
       console.error('[STATS] API returned error:', JSON.stringify(statsData.error));
-      return null;
+      throw new Error('API returned error response');
     }
 
     if (!statsData.result) {
       console.error('[STATS] ERROR: No result field in response!', statsData);
-      return null;
+      throw new Error('No result field in response');
     }
 
     console.log('[STATS] ✅ Stats fetched successfully:', statsData.result.length, 'categories');
