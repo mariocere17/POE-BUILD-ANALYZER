@@ -21,7 +21,7 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
                 iLvl {item.ilvl}
               </span>
             )}
-            {item.levelReq && (
+            {item.levelReq > 0 && (
               <span className="px-3 py-1.5 bg-blue-900/50 border-2 border-blue-500 text-blue-300 rounded-md text-xs font-bold">
                 Req Lvl {item.levelReq}
               </span>
