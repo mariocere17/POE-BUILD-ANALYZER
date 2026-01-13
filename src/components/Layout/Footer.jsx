@@ -21,10 +21,10 @@ const Footer = () => {
     <footer className="mt-16 pt-12 border-t-2 border-slate-700/50 bg-gradient-to-b from-transparent to-slate-950/50">
       <div className="max-w-7xl mx-auto px-6">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div className="flex flex-col md:flex-row md:justify-between gap-8 mb-8">
 
           {/* About Section */}
-          <div className="space-y-3">
+          <div className="space-y-3 md:flex-1 md:max-w-sm">
             <div className="flex items-center gap-2 mb-4">
               <Info size={20} className="text-cyan-400" />
               <h3 className="text-lg font-bold text-cyan-400 uppercase tracking-wide">About</h3>
@@ -38,7 +38,7 @@ const Footer = () => {
           </div>
 
           {/* User Guide Section */}
-          <div className="space-y-3">
+          <div className="space-y-3 md:flex-1 md:max-w-sm">
             <div className="flex items-center gap-2 mb-4">
               <BookOpen size={20} className="text-cyan-400" />
               <h3 className="text-lg font-bold text-cyan-400 uppercase tracking-wide">Resources</h3>
@@ -61,7 +61,7 @@ const Footer = () => {
           </div>
 
           {/* Quick Links Section */}
-          <div className="space-y-3">
+          <div className="space-y-3 md:flex-1 md:max-w-xs">
             <div className="flex items-center gap-2 mb-4">
               <Link2 size={20} className="text-cyan-400" />
               <h3 className="text-lg font-bold text-cyan-400 uppercase tracking-wide">Quick Links</h3>

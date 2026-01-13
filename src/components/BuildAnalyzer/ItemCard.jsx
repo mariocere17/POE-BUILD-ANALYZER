@@ -1,9 +1,13 @@
 // src/components/BuildAnalyzer/ItemCard.jsx
-import React from 'react';
-import { Edit2, Copy, Check, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { Edit2, Copy, Check, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { getRarityColor } from '../../utils/rarityColors';
 
 const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => {
+  const [showAllEnchants, setShowAllEnchants] = useState(false);
+  const [showAllImplicits, setShowAllImplicits] = useState(false);
+  const [showAllExplicits, setShowAllExplicits] = useState(false);
+
   return (
     <div className="bg-slate-900/50 border-2 border-slate-700 rounded-xl p-6 hover:border-cyan-500/50 transition-all duration-200 shadow-lg">
       <div className="flex items-start justify-between mb-4">
@@ -77,7 +81,7 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
                 Enchants ({item.enchantMods.length})
               </p>
               <div className="space-y-1.5 pl-5">
-                {item.enchantMods.slice(0, 3).map((mod, i) => (
+                {(showAllEnchants ? item.enchantMods : item.enchantMods.slice(0, 3)).map((mod, i) => (
                   <p key={i} className="text-sm text-teal-200 font-medium">
                     {mod.hasAllocates && (
                       <span className="text-xs bg-green-900/60 border border-green-400 px-2 py-0.5 rounded mr-2">[ALLOCATES]</span>
@@ -92,9 +96,22 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
                   </p>
                 ))}
                 {item.enchantMods.length > 3 && (
-                  <p className="text-xs text-slate-500 italic">
-                    ...and {item.enchantMods.length - 3} more
-                  </p>
+                  <button
+                    onClick={() => setShowAllEnchants(!showAllEnchants)}
+                    className="flex items-center gap-1 text-xs text-teal-400 hover:text-teal-300 transition-colors mt-2 font-semibold"
+                  >
+                    {showAllEnchants ? (
+                      <>
+                        <ChevronUp size={14} />
+                        Show less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={14} />
+                        Show all ({item.enchantMods.length})
+                      </>
+                    )}
+                  </button>
                 )}
               </div>
             </div>
@@ -106,7 +123,7 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
                 Implicit Mods ({item.implicitMods.length})
               </p>
               <div className="space-y-1.5 pl-5">
-                {item.implicitMods.slice(0, 3).map((mod, i) => (
+                {(showAllImplicits ? item.implicitMods : item.implicitMods.slice(0, 3)).map((mod, i) => (
                   <p key={i} className={`text-sm font-medium ${mod.fractured ? 'text-yellow-300' : 'text-emerald-200'}`}>
                     {mod.fractured && (
                       <span className="text-xs bg-yellow-900/60 border border-yellow-400 px-2 py-0.5 rounded mr-2">[FRACTURED]</span>
@@ -118,9 +135,22 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
                   </p>
                 ))}
                 {item.implicitMods.length > 3 && (
-                  <p className="text-xs text-slate-500 italic">
-                    ...and {item.implicitMods.length - 3} more
-                  </p>
+                  <button
+                    onClick={() => setShowAllImplicits(!showAllImplicits)}
+                    className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors mt-2 font-semibold"
+                  >
+                    {showAllImplicits ? (
+                      <>
+                        <ChevronUp size={14} />
+                        Show less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={14} />
+                        Show all ({item.implicitMods.length})
+                      </>
+                    )}
+                  </button>
                 )}
               </div>
             </div>
@@ -132,7 +162,7 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
                 Explicit Mods ({item.explicitMods.length})
               </p>
               <div className="space-y-1.5 pl-5">
-                {item.explicitMods.slice(0, 4).map((mod, i) => (
+                {(showAllExplicits ? item.explicitMods : item.explicitMods.slice(0, 4)).map((mod, i) => (
                   <p key={i} className={`text-sm font-medium ${mod.fractured ? 'text-yellow-300' : 'text-cyan-200'}`}>
                     {mod.fractured && (
                       <span className="text-xs bg-yellow-900/60 border border-yellow-400 px-2 py-0.5 rounded mr-2">[FRACTURED]</span>
@@ -141,9 +171,22 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
                   </p>
                 ))}
                 {item.explicitMods.length > 4 && (
-                  <p className="text-xs text-slate-500 italic">
-                    ...and {item.explicitMods.length - 4} more
-                  </p>
+                  <button
+                    onClick={() => setShowAllExplicits(!showAllExplicits)}
+                    className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 transition-colors mt-2 font-semibold"
+                  >
+                    {showAllExplicits ? (
+                      <>
+                        <ChevronUp size={14} />
+                        Show less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={14} />
+                        Show all ({item.explicitMods.length})
+                      </>
+                    )}
+                  </button>
                 )}
               </div>
             </div>
