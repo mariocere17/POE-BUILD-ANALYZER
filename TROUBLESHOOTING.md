@@ -24,6 +24,32 @@ Uncaught TypeError: The compressed data was not valid
 
 ---
 
+### Some Items Not Displaying (Charms)
+
+**Symptom:**
+Some items appear in console logs but don't show up in the UI, particularly magic/rare charms.
+
+**Example:**
+```
+[CHARM DEBUG] Item 14: Aqueous Golden Charm of the Eternal
+```
+Shows in console but not in the item list.
+
+**Cause:**
+Magic/rare items in PoB format don't have a separate basetype line. The parser was incorrectly assigning "Unique ID: ..." as the baseType.
+
+**Fixed in v2.2.0:**
+- Automatic baseType extraction from magic item names
+- Support for all charm types (Golden, Silver, Thawing, Iron, Jade, Amber, Cobalt, Crimson, Viridian)
+- Fixed button overflow outside card boundaries
+
+**If still experiencing issues:**
+- Clear browser cache and reload
+- Check console for `[CHARM DEBUG]` logs
+- Report via the bug report button in the app
+
+---
+
 ### Trade Links Have No Mods
 
 **Symptom:**
@@ -294,4 +320,4 @@ These are **not bugs**, just limitations of the current implementation:
 ---
 
 **Last Updated:** 2026-01-13
-**Version:** 2.1.0
+**Version:** 2.2.0

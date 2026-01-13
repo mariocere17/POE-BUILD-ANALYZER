@@ -289,6 +289,15 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 Version History
 
+### v2.2.0 (2026-01-13)
+- 🐛 **Fixed:** Magic/rare charm parsing (items like "Aqueous Golden Charm of the Eternal" now display correctly)
+- 🐛 **Fixed:** Button overflow outside item cards
+- 🐛 **Fixed:** Feature Request GitHub navigation (popup blocker detection)
+- ✨ **Added:** Hybrid bug reporting system (Discord webhook + GitHub Issues)
+- ✨ **Added:** Anti-spam protection with rate limiting and honeypot
+- 🔒 **Security:** Rate limits - 1 bug report per 5min, 1 feature request per hour
+- 🔧 **Improved:** BaseType extraction for all charm types (Golden, Silver, Thawing, etc.)
+
 ### v2.1.0 (2026-01-13)
 - ✅ Fixed GitHub Actions permissions for auto-updates
 - ✅ Verified complete functionality in production
