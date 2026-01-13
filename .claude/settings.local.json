@@ -25,7 +25,17 @@
       "Bash(git commit:*)",
       "Bash(git push)",
       "Bash(vercel inspect:*)",
-      "Bash(vercel ls:*)"
+      "Bash(vercel ls:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(gh repo view mariocere17/POE-BUILD-ANALYZER --json visibility,isPrivate)",
+      "Bash(echo:*)",
+      "Bash(if exist node_modules.cache rmdir /s /q node_modules.cache)",
+      "Bash(set FAST_REFRESH=false)",
+      "Bash(set PORT=3001)",
+      "Bash(find:*)",
+      "Bash(git push:*)",
+      "Bash(tasklist:*)"
     ]
   }
 }

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, AlertCircle } from 'lucide-react';
 import { fetchActiveLeagues, DEFAULT_LEAGUES } from '../../utils/constants';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const BuildForm = ({
   pobCode,
@@ -14,6 +15,7 @@ const BuildForm = ({
   error,
   onAnalyze
 }) => {
+  const { t } = useLanguage();
   const [leagues, setLeagues] = useState(DEFAULT_LEAGUES);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
 
@@ -47,7 +49,7 @@ const BuildForm = ({
     <div className="bg-slate-900/50 border-2 border-slate-700 rounded-xl p-8 mb-8 shadow-2xl">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
-          <label className="block text-sm text-cyan-400 font-bold mb-3 uppercase tracking-wide">Game</label>
+          <label className="block text-sm text-cyan-400 font-bold mb-3 uppercase tracking-wide">{t('buildForm.game')}</label>
           <select
             value={game}
             onChange={(e) => handleGameChange(e.target.value)}
@@ -60,7 +62,7 @@ const BuildForm = ({
 
         <div>
           <label className="block text-sm text-cyan-400 font-bold mb-3 uppercase tracking-wide">
-            League {loadingLeagues && <span className="text-xs text-slate-500">(loading...)</span>}
+            {t('buildForm.league')} {loadingLeagues && <span className="text-xs text-slate-500">({t('buildForm.leagueLoading')})</span>}
           </label>
           <select
             value={league}
@@ -76,12 +78,12 @@ const BuildForm = ({
       </div>
 
       <label className="block text-sm text-cyan-400 font-bold mb-3 uppercase tracking-wide">
-        PoB Code or URL
+        {t('buildForm.pobCodeLabel')}
       </label>
       <textarea
         value={pobCode}
         onChange={(e) => setPobCode(e.target.value)}
-        placeholder="Paste your PoB code (base64) or a pobb.in URL here&#10;&#10;Examples:&#10;• Raw PoB code: eNrtXW1z27gR_u7...&#10;• pobb.in URL: https://pobb.in/VVZy6u-NrRUi"
+        placeholder={t('buildForm.pobPlaceholder')}
         className="w-full h-40 bg-slate-800 border-2 border-slate-700 rounded-lg px-5 py-4 text-white placeholder-slate-500 font-mono text-sm resize-none focus:outline-none focus:border-cyan-500 transition-all"
       />
 
@@ -98,7 +100,7 @@ const BuildForm = ({
         className="mt-6 w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg font-bold text-lg uppercase tracking-wide flex items-center justify-center gap-3 transition-all duration-200 shadow-lg shadow-cyan-500/20"
       >
         <Search size={24} />
-        {loading ? 'Analyzing...' : 'Analyze Build'}
+        {loading ? t('buildForm.analyzing') : t('buildForm.analyzeButton')}
       </button>
     </div>
   );

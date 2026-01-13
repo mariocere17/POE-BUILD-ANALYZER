@@ -24,3 +24,9 @@ yarn-error.log*
 
 # Vercel
 .vercel
+
+# Claude
+tmpclaude-*
+
+
+nul

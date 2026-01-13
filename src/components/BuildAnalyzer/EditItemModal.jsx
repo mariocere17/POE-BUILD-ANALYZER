@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { RARITY_OPTIONS } from '../../utils/constants';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const EditItemModal = ({ item, onClose, onSave }) => {
+  const { t } = useLanguage();
   const [editedItem, setEditedItem] = useState({ ...item });
 
   const handleModToggle = (type, index, checked) => {
@@ -46,7 +48,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
         <div className="p-6 space-y-6 overflow-y-auto flex-1 bg-slate-950">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-cyan-400 font-semibold mb-2 uppercase tracking-wide">Item Level (minimum)</label>
+              <label className="block text-sm text-cyan-400 font-semibold mb-2 uppercase tracking-wide">{t('editModal.itemLevel')}</label>
               <input
                 type="number"
                 value={editedItem.ilvl || ''}
@@ -56,7 +58,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
             </div>
 
             <div>
-              <label className="block text-sm text-cyan-400 font-semibold mb-2 uppercase tracking-wide">Rarity</label>
+              <label className="block text-sm text-cyan-400 font-semibold mb-2 uppercase tracking-wide">{t('editModal.rarity')}</label>
               <select
                 value={editedItem.rarity}
                 onChange={(e) => setEditedItem({ ...editedItem, rarity: e.target.value })}
@@ -72,7 +74,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
           {editedItem.enchantMods.length > 0 && (
             <div>
               <label className="block text-sm text-teal-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-teal-400 pl-3">
-                Enchants ({editedItem.enchantMods.filter((_, i) => editedItem.filters.selectedEnchants[i]).length} selected)
+                {t('itemCard.enchants')} ({editedItem.enchantMods.filter((_, i) => editedItem.filters.selectedEnchants[i]).length} {t('editModal.enchantsSelected')})
               </label>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {editedItem.enchantMods.map((mod, i) => (
@@ -88,14 +90,14 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                       <div className="flex gap-2">
                         <input
                           type="number"
-                          placeholder="Min"
+                          placeholder={t('editModal.minPlaceholder')}
                           defaultValue={mod.value}
                           onChange={(e) => handleValueChange('enchant', i, 'min', e.target.value)}
                           className="w-20 bg-slate-700 border-2 border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500"
                         />
                         <input
                           type="number"
-                          placeholder="Max"
+                          placeholder={t('editModal.maxPlaceholder')}
                           onChange={(e) => handleValueChange('enchant', i, 'max', e.target.value)}
                           className="w-20 bg-slate-700 border-2 border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500"
                         />
@@ -110,7 +112,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
           {editedItem.implicitMods.length > 0 && (
             <div>
               <label className="block text-sm text-emerald-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-emerald-400 pl-3">
-                Implicit Mods ({editedItem.implicitMods.filter((_, i) => editedItem.filters.selectedImplicits[i]).length} selected)
+                {t('itemCard.implicitMods')} ({editedItem.implicitMods.filter((_, i) => editedItem.filters.selectedImplicits[i]).length} {t('editModal.implicitsSelected')})
               </label>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {editedItem.implicitMods.map((mod, i) => (
@@ -126,14 +128,14 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                       <div className="flex gap-2">
                         <input
                           type="number"
-                          placeholder="Min"
+                          placeholder={t('editModal.minPlaceholder')}
                           defaultValue={mod.value}
                           onChange={(e) => handleValueChange('implicit', i, 'min', e.target.value)}
                           className="w-20 bg-slate-700 border-2 border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-emerald-500"
                         />
                         <input
                           type="number"
-                          placeholder="Max"
+                          placeholder={t('editModal.maxPlaceholder')}
                           onChange={(e) => handleValueChange('implicit', i, 'max', e.target.value)}
                           className="w-20 bg-slate-700 border-2 border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-emerald-500"
                         />
@@ -148,7 +150,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
           {editedItem.explicitMods.length > 0 && (
             <div>
               <label className="block text-sm text-cyan-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-cyan-400 pl-3">
-                Explicit Mods ({editedItem.explicitMods.filter((_, i) => editedItem.filters.selectedExplicits[i]).length} selected)
+                {t('itemCard.explicitMods')} ({editedItem.explicitMods.filter((_, i) => editedItem.filters.selectedExplicits[i]).length} {t('editModal.explicitsSelected')})
               </label>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {editedItem.explicitMods.map((mod, i) => (
@@ -164,14 +166,14 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                       <div className="flex gap-2">
                         <input
                           type="number"
-                          placeholder="Min"
+                          placeholder={t('editModal.minPlaceholder')}
                           defaultValue={mod.value}
                           onChange={(e) => handleValueChange('explicit', i, 'min', e.target.value)}
                           className="w-20 bg-slate-700 border-2 border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-cyan-500"
                         />
                         <input
                           type="number"
-                          placeholder="Max"
+                          placeholder={t('editModal.maxPlaceholder')}
                           onChange={(e) => handleValueChange('explicit', i, 'max', e.target.value)}
                           className="w-20 bg-slate-700 border-2 border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-cyan-500"
                         />
@@ -192,13 +194,13 @@ const EditItemModal = ({ item, onClose, onSave }) => {
             }}
             className="flex-1 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white px-6 py-3 rounded-lg font-bold uppercase tracking-wide transition-all duration-200 shadow-lg shadow-cyan-500/30"
           >
-            Save Changes
+            {t('editModal.saveChanges')}
           </button>
           <button
             onClick={onClose}
             className="px-6 py-3 bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-slate-200 rounded-lg font-semibold transition-all duration-200"
           >
-            Cancel
+            {t('editModal.cancel')}
           </button>
         </div>
       </div>

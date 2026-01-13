@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { API_ENDPOINTS } from '../../config/apiConfig';
 import poe1Logo from '../../assets/other-icons/poe1-logo.png';
 import poe2Logo from '../../assets/other-icons/poe2-logo.png';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 /**
  * CurrencyConverter Component
@@ -30,6 +31,7 @@ const CurrencyConverter = ({
   maxVisible = 5,
   rotationInterval = 5000
 }) => {
+  const { t } = useLanguage();
   const [currencyData, setCurrencyData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -210,7 +212,7 @@ const CurrencyConverter = ({
         />
         <div>
           <h3 className="text-lg font-bold text-cyan-400 uppercase tracking-wide">
-            Economy Status
+            {t('currency.economyStatus')}
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
             {game === 'poe2' ? 'Path of Exile 2' : 'Path of Exile'} • {league}
@@ -239,10 +241,10 @@ const CurrencyConverter = ({
           {currencyPairs.length > maxVisible && (
             <div className="flex items-center justify-between mb-3 text-xs text-slate-500">
               <span>
-                Showing {maxVisible} of {currencyPairs.length}
+                {t('currency.showing')} {maxVisible} {t('currency.of')} {currencyPairs.length}
                 {isPaused && (
                   <span className="ml-2 text-cyan-400 font-semibold">
-                    ⏸ Paused
+                    ⏸ {t('currency.paused')}
                   </span>
                 )}
               </span>

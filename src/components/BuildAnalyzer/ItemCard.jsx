@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { Edit2, Copy, Check, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { getRarityColor } from '../../utils/rarityColors';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => {
+  const { t } = useLanguage();
   const [showAllEnchants, setShowAllEnchants] = useState(false);
   const [showAllImplicits, setShowAllImplicits] = useState(false);
   const [showAllExplicits, setShowAllExplicits] = useState(false);
@@ -32,7 +34,7 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
             )}
             {item.corrupted && (
               <span className="px-3 py-1.5 bg-red-900/50 border-2 border-red-500 text-red-300 rounded-md text-xs font-bold">
-                Corrupted
+                {t('itemCard.corrupted')}
               </span>
             )}
             {item.socketCount > 0 && (
@@ -48,14 +50,14 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
           <button
             onClick={() => onEdit(item)}
             className="p-3 bg-slate-800 hover:bg-cyan-500/20 border-2 border-slate-600 hover:border-cyan-500 rounded-lg transition-all duration-200 flex-shrink-0"
-            title="Edit filters"
+            title={t('itemCard.editFilters')}
           >
             <Edit2 size={20} className="text-cyan-400" />
           </button>
           <button
             onClick={() => onCopy(item, index)}
             className="p-3 bg-slate-800 hover:bg-emerald-500/20 border-2 border-slate-600 hover:border-emerald-500 rounded-lg transition-all duration-200 flex-shrink-0"
-            title="Copy URL"
+            title={t('itemCard.copyUrl')}
           >
             {copiedIndex === index ? (
               <Check size={20} className="text-emerald-400" />
@@ -66,7 +68,7 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
           <button
             onClick={() => onOpenTrade(item)}
             className="p-3 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 rounded-lg transition-all duration-200 flex-shrink-0"
-            title="Search in Trade"
+            title={t('itemCard.searchInTrade')}
           >
             <ExternalLink size={20} className="text-white" />
           </button>
@@ -78,19 +80,19 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
           {item.enchantMods.length > 0 && (
             <div>
               <p className="text-xs text-teal-400 mb-2 font-bold uppercase tracking-wide border-l-4 border-teal-400 pl-3">
-                Enchants ({item.enchantMods.length})
+                {t('itemCard.enchants')} ({item.enchantMods.length})
               </p>
               <div className="space-y-1.5 pl-5">
                 {(showAllEnchants ? item.enchantMods : item.enchantMods.slice(0, 3)).map((mod, i) => (
                   <p key={i} className="text-sm text-teal-200 font-medium">
                     {mod.hasAllocates && (
-                      <span className="text-xs bg-green-900/60 border border-green-400 px-2 py-0.5 rounded mr-2">[ALLOCATES]</span>
+                      <span className="text-xs bg-green-900/60 border border-green-400 px-2 py-0.5 rounded mr-2">[{t('itemCard.allocates')}]</span>
                     )}
                     {mod.isRuneEnchant && (
-                      <span className="text-xs bg-teal-900/60 border border-teal-400 px-2 py-0.5 rounded mr-2">[RUNE]</span>
+                      <span className="text-xs bg-teal-900/60 border border-teal-400 px-2 py-0.5 rounded mr-2">[{t('itemCard.rune')}]</span>
                     )}
                     {!mod.isRuneEnchant && !mod.hasAllocates && (
-                      <span className="text-xs bg-teal-900/60 border border-teal-400 px-2 py-0.5 rounded mr-2">[ENCHANT]</span>
+                      <span className="text-xs bg-teal-900/60 border border-teal-400 px-2 py-0.5 rounded mr-2">[{t('itemCard.enchant')}]</span>
                     )}
                     {mod.text}
                   </p>
@@ -103,12 +105,12 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
                     {showAllEnchants ? (
                       <>
                         <ChevronUp size={14} />
-                        Show less
+                        {t('itemCard.showLess')}
                       </>
                     ) : (
                       <>
                         <ChevronDown size={14} />
-                        Show all ({item.enchantMods.length})
+                        {t('itemCard.showAll')} ({item.enchantMods.length})
                       </>
                     )}
                   </button>
@@ -120,16 +122,16 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
           {item.implicitMods.length > 0 && (
             <div>
               <p className="text-xs text-emerald-400 mb-2 font-bold uppercase tracking-wide border-l-4 border-emerald-400 pl-3">
-                Implicit Mods ({item.implicitMods.length})
+                {t('itemCard.implicitMods')} ({item.implicitMods.length})
               </p>
               <div className="space-y-1.5 pl-5">
                 {(showAllImplicits ? item.implicitMods : item.implicitMods.slice(0, 3)).map((mod, i) => (
                   <p key={i} className={`text-sm font-medium ${mod.fractured ? 'text-yellow-300' : 'text-emerald-200'}`}>
                     {mod.fractured && (
-                      <span className="text-xs bg-yellow-900/60 border border-yellow-400 px-2 py-0.5 rounded mr-2">[FRACTURED]</span>
+                      <span className="text-xs bg-yellow-900/60 border border-yellow-400 px-2 py-0.5 rounded mr-2">[{t('itemCard.fractured')}]</span>
                     )}
                     {!mod.fractured && (
-                      <span className="text-xs bg-emerald-900/60 border border-emerald-400 px-2 py-0.5 rounded mr-2">[IMPLICIT]</span>
+                      <span className="text-xs bg-emerald-900/60 border border-emerald-400 px-2 py-0.5 rounded mr-2">[{t('itemCard.implicit')}]</span>
                     )}
                     {mod.text}
                   </p>
@@ -142,12 +144,12 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
                     {showAllImplicits ? (
                       <>
                         <ChevronUp size={14} />
-                        Show less
+                        {t('itemCard.showLess')}
                       </>
                     ) : (
                       <>
                         <ChevronDown size={14} />
-                        Show all ({item.implicitMods.length})
+                        {t('itemCard.showAll')} ({item.implicitMods.length})
                       </>
                     )}
                   </button>
@@ -159,13 +161,13 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
           {item.explicitMods.length > 0 && (
             <div>
               <p className="text-xs text-cyan-400 mb-2 font-bold uppercase tracking-wide border-l-4 border-cyan-400 pl-3">
-                Explicit Mods ({item.explicitMods.length})
+                {t('itemCard.explicitMods')} ({item.explicitMods.length})
               </p>
               <div className="space-y-1.5 pl-5">
                 {(showAllExplicits ? item.explicitMods : item.explicitMods.slice(0, 4)).map((mod, i) => (
                   <p key={i} className={`text-sm font-medium ${mod.fractured ? 'text-yellow-300' : 'text-cyan-200'}`}>
                     {mod.fractured && (
-                      <span className="text-xs bg-yellow-900/60 border border-yellow-400 px-2 py-0.5 rounded mr-2">[FRACTURED]</span>
+                      <span className="text-xs bg-yellow-900/60 border border-yellow-400 px-2 py-0.5 rounded mr-2">[{t('itemCard.fractured')}]</span>
                     )}
                     {mod.text}
                   </p>
@@ -178,12 +180,12 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
                     {showAllExplicits ? (
                       <>
                         <ChevronUp size={14} />
-                        Show less
+                        {t('itemCard.showLess')}
                       </>
                     ) : (
                       <>
                         <ChevronDown size={14} />
-                        Show all ({item.explicitMods.length})
+                        {t('itemCard.showAll')} ({item.explicitMods.length})
                       </>
                     )}
                   </button>

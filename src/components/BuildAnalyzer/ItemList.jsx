@@ -2,6 +2,7 @@
 import React from 'react';
 import ItemCard from './ItemCard';
 import { SELLER_STATUS_OPTIONS, LEAGUES } from '../../utils/constants';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const ItemList = ({
   items,
@@ -14,6 +15,7 @@ const ItemList = ({
   onOpenTrade,
   game
 }) => {
+  const { t } = useLanguage();
   // Encontrar el display name de la liga
   const leagueDisplay = LEAGUES[game]?.find(lg => lg.value === league)?.display || league;
 
@@ -21,14 +23,14 @@ const ItemList = ({
     <div className="space-y-5">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <h2 className="text-3xl font-bold text-cyan-400">
-          Items Found ({items.length})
+          {t('itemList.itemsFound')} ({items.length})
         </h2>
         <div className="flex gap-3 items-center flex-wrap">
           <div className="text-sm text-slate-300 bg-slate-800/70 px-5 py-2.5 rounded-lg border-2 border-slate-700">
-            League: <span className="text-cyan-400 font-bold">{leagueDisplay}</span>
+            {t('itemList.league')}: <span className="text-cyan-400 font-bold">{leagueDisplay}</span>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-400 font-semibold">Status:</label>
+            <label className="text-sm text-slate-400 font-semibold">{t('itemList.status')}:</label>
             <select
               value={sellerStatus}
               onChange={(e) => setSellerStatus(e.target.value)}

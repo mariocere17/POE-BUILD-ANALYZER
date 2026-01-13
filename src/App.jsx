@@ -10,8 +10,11 @@ import ReportModal from './components/ReportModal';
 import CurrencyConverter from './components/PoeNinja/CurrencyConverter';
 import { poe2CurrencyPairs, poe1CurrencyPairs } from './config/currencyPairs';
 import { Bug } from 'lucide-react';
+import LanguageSelector from './components/Layout/LanguageSelector';
+import { useLanguage } from './i18n/LanguageContext';
 
 const PoEBuildAnalyzer = () => {
+  const { t } = useLanguage();
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const {
     pobCode,
@@ -103,9 +106,12 @@ const PoEBuildAnalyzer = () => {
         >
           <Bug size={24} />
           <span className="absolute bottom-full right-0 mb-2 px-3 py-1 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Report Issue
+            {t('reportModal.reportIssue')}
           </span>
         </button>
+
+        {/* Language Selector Button */}
+        <LanguageSelector />
       </div>
 
       <Footer />

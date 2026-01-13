@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Bug, Lightbulb, Send, AlertCircle, CheckCircle, Clock, Image, Trash2 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 // ⚙️ CONFIGURABLE RATE LIMITS (easy to edit)
 const RATE_LIMITS = {
@@ -13,6 +14,7 @@ const STORAGE_KEYS = {
 };
 
 const ReportModal = ({ isOpen, onClose, gameConfig }) => {
+  const { t } = useLanguage();
   const [reportType, setReportType] = useState(null); // 'bug' or 'feature'
   const [description, setDescription] = useState('');
   const [email, setEmail] = useState('');
@@ -53,7 +55,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
           // Validate file size (5MB max)
           const maxSize = 5 * 1024 * 1024;
           if (blob.size > maxSize) {
-            setSubmitStatus({ type: 'error', message: 'Image must be smaller than 5MB' });
+            setSubmitStatus({ type: 'error', message: t('reportModal.imageTooLarge') });
             return;
           }
 
@@ -70,7 +72,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
             setScreenshotPreview(reader.result);
           };
           reader.readAsDataURL(file);
-          setSubmitStatus({ type: 'success', message: 'Screenshot pasted successfully!' });
+          setSubmitStatus({ type: 'success', message: t('reportModal.screenshotPasted') });
 
           // Clear success message after 2 seconds
           setTimeout(() => {
@@ -124,14 +126,14 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setSubmitStatus({ type: 'error', message: 'Please select an image file' });
+      setSubmitStatus({ type: 'error', message: t('reportModal.imageTypeError') });
       return;
     }
 
     // Validate file size (5MB max)
     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (file.size > maxSize) {
-      setSubmitStatus({ type: 'error', message: 'Image must be smaller than 5MB' });
+      setSubmitStatus({ type: 'error', message: t('reportModal.imageTooLarge') });
       return;
     }
 
@@ -157,7 +159,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
     // Check honeypot (bot detection)
     if (honeypot) {
       console.log('Bot detected via honeypot');
-      setSubmitStatus({ type: 'error', message: 'Invalid submission detected' });
+      setSubmitStatus({ type: 'error', message: t('reportModal.invalidSubmission') });
       return;
     }
 
@@ -165,13 +167,13 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
     if (!canSubmit('bug')) {
       setSubmitStatus({
         type: 'error',
-        message: `Please wait ${formatTimeRemaining(timeRemaining.bug)} before submitting another bug report`
+        message: `${t('reportModal.waitMessage')} ${formatTimeRemaining(timeRemaining.bug)} ${t('reportModal.beforeSubmitting')} ${t('reportModal.bugReport')}`
       });
       return;
     }
 
     if (description.trim().length < 10) {
-      setSubmitStatus({ type: 'error', message: 'Please provide at least 10 characters' });
+      setSubmitStatus({ type: 'error', message: t('reportModal.minLengthError') });
       return;
     }
 
@@ -208,7 +210,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
         // Save timestamp to localStorage
         localStorage.setItem(STORAGE_KEYS.lastBugReport, Date.now().toString());
 
-        setSubmitStatus({ type: 'success', message: data.message || 'Report submitted successfully!' });
+        setSubmitStatus({ type: 'success', message: data.message || t('reportModal.successMessage') });
         setDescription('');
         setEmail('');
         setScreenshot(null);
@@ -219,11 +221,11 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
           setReportType(null);
         }, 2000);
       } else {
-        setSubmitStatus({ type: 'error', message: data.error || 'Failed to submit report' });
+        setSubmitStatus({ type: 'error', message: data.error || t('reportModal.errorMessage') });
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setSubmitStatus({ type: 'error', message: 'Network error. Please try again.' });
+      setSubmitStatus({ type: 'error', message: t('reportModal.networkError') });
     } finally {
       setIsSubmitting(false);
     }
@@ -234,7 +236,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
     if (!canSubmit('feature')) {
       setSubmitStatus({
         type: 'error',
-        message: `Please wait ${formatTimeRemaining(timeRemaining.feature)} before submitting another feature request`
+        message: `${t('reportModal.waitMessage')} ${formatTimeRemaining(timeRemaining.feature)} ${t('reportModal.beforeSubmitting')} ${t('reportModal.featureRequest')}`
       });
       setReportType(null);
       return;
@@ -296,7 +298,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
       } else {
         setSubmitStatus({
           type: 'error',
-          message: `Please wait ${formatTimeRemaining(timeRemaining.feature)} before submitting another feature request`
+          message: `${t('reportModal.waitMessage')} ${formatTimeRemaining(timeRemaining.feature)} ${t('reportModal.beforeSubmitting')} ${t('reportModal.featureRequest')}`
         });
       }
     } else {
@@ -306,7 +308,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
       } else {
         setSubmitStatus({
           type: 'error',
-          message: `Please wait ${formatTimeRemaining(timeRemaining.bug)} before submitting another bug report`
+          message: `${t('reportModal.waitMessage')} ${formatTimeRemaining(timeRemaining.bug)} ${t('reportModal.beforeSubmitting')} ${t('reportModal.bugReport')}`
         });
       }
     }
@@ -317,7 +319,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
       <div className="bg-gray-900 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-2xl font-bold text-orange-400">Report an Issue</h2>
+          <h2 className="text-2xl font-bold text-orange-400">{t('reportModal.title')}</h2>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-white transition-colors"
@@ -333,7 +335,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
             // Selection Screen
             <div className="space-y-4">
               <p className="text-gray-300 mb-6">
-                How can we help improve PoE Build Analyzer?
+                {t('reportModal.subtitle')}
               </p>
 
               {/* Bug Report Option */}
@@ -351,15 +353,15 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                     <Bug size={32} className={canSubmit('bug') ? 'text-red-500 group-hover:text-red-400' : 'text-gray-600'} />
                   </div>
                   <div className="text-left flex-1">
-                    <h3 className="text-xl font-semibold text-white mb-2">Report a Bug</h3>
+                    <h3 className="text-xl font-semibold text-white mb-2">{t('reportModal.bugReportTitle')}</h3>
                     <p className="text-gray-400">
-                      Something not working? Let us know about technical issues, errors, or broken features.
+                      {t('reportModal.bugReportDesc')}
                     </p>
                     {!canSubmit('bug') && (
                       <div className="flex items-center space-x-2 mt-3 text-yellow-500">
                         <Clock size={16} />
                         <span className="text-sm font-medium">
-                          Available in {formatTimeRemaining(timeRemaining.bug)}
+                          {t('reportModal.availableIn')} {formatTimeRemaining(timeRemaining.bug)}
                         </span>
                       </div>
                     )}
@@ -382,15 +384,15 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                     <Lightbulb size={32} className={canSubmit('feature') ? 'text-blue-500 group-hover:text-blue-400' : 'text-gray-600'} />
                   </div>
                   <div className="text-left flex-1">
-                    <h3 className="text-xl font-semibold text-white mb-2">Request a Feature</h3>
+                    <h3 className="text-xl font-semibold text-white mb-2">{t('reportModal.featureRequestTitle')}</h3>
                     <p className="text-gray-400">
-                      Have an idea? Suggest new features or improvements (opens GitHub Issues).
+                      {t('reportModal.featureRequestDesc')}
                     </p>
                     {!canSubmit('feature') && (
                       <div className="flex items-center space-x-2 mt-3 text-yellow-500">
                         <Clock size={16} />
                         <span className="text-sm font-medium">
-                          Available in {formatTimeRemaining(timeRemaining.feature)}
+                          {t('reportModal.availableIn')} {formatTimeRemaining(timeRemaining.feature)}
                         </span>
                       </div>
                     )}
@@ -425,12 +427,12 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Describe the bug <span className="text-red-500">*</span>
+                  {t('reportModal.describeBug')} <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="What happened? What did you expect to happen? Include steps to reproduce if possible..."
+                  placeholder={t('reportModal.bugPlaceholder')}
                   className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
                   rows="6"
                   required
@@ -438,31 +440,31 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                   disabled={isSubmitting}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Minimum 10 characters ({description.length}/10)
+                  {t('reportModal.minimumChars')} ({description.length}/10)
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Email (optional)
+                  {t('reportModal.emailLabel')}
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your.email@example.com"
+                  placeholder={t('reportModal.emailPlaceholder')}
                   className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   disabled={isSubmitting}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Optional - if you want us to follow up with you
+                  {t('reportModal.emailHelp')}
                 </p>
               </div>
 
               {/* Screenshot Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Screenshot (optional)
+                  {t('reportModal.screenshotLabel')}
                 </label>
 
                 {!screenshotPreview ? (
@@ -481,11 +483,11 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                         className="flex items-center justify-center space-x-2 w-full px-4 py-3 bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer"
                       >
                         <Image size={20} />
-                        <span>Click to upload or press Ctrl+V to paste</span>
+                        <span>{t('reportModal.screenshotUpload')}</span>
                       </label>
                     </div>
                     <p className="text-xs text-gray-500 text-center">
-                      💡 Tip: Take a screenshot (Win+Shift+S or Snipping Tool) and paste it here
+                      {t('reportModal.screenshotTip')}
                     </p>
                   </div>
                 ) : (
@@ -500,7 +502,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                       onClick={handleRemoveScreenshot}
                       className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
                       disabled={isSubmitting}
-                      title="Remove screenshot"
+                      title={t('reportModal.removeScreenshot')}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -511,7 +513,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                 )}
                 {!screenshotPreview && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Helps us understand the issue better
+                    {t('reportModal.screenshotHelp')}
                   </p>
                 )}
               </div>
@@ -539,9 +541,9 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
               {/* Info Box */}
               <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
                 <p className="text-sm text-gray-400">
-                  <strong className="text-gray-300">Auto-captured info:</strong> Browser version,
-                  current game ({gameConfig?.selectedGame}), league ({gameConfig?.selectedLeague}),
-                  and page URL will be included in the report.
+                  <strong className="text-gray-300">{t('reportModal.autoCapture')}</strong> {t('reportModal.autoCaptureDesc')}
+                   ({gameConfig?.selectedGame}), {t('itemList.league').toLowerCase()} ({gameConfig?.selectedLeague}),
+                  {t('reportModal.autoCaptureSuffix')}
                 </p>
               </div>
 
@@ -553,7 +555,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                   className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isSubmitting}
                 >
-                  Back
+                  {t('reportModal.back')}
                 </button>
                 <button
                   type="submit"
@@ -563,12 +565,12 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                      <span>Sending...</span>
+                      <span>{t('reportModal.sending')}</span>
                     </>
                   ) : (
                     <>
                       <Send size={18} />
-                      <span>Submit Report</span>
+                      <span>{t('reportModal.submitReport')}</span>
                     </>
                   )}
                 </button>

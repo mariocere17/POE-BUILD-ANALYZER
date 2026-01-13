@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { ExternalLink, BookOpen, Info, Link2 } from 'lucide-react';
 import UserGuideModal from './UserGuideModal';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const Footer = () => {
+  const { t } = useLanguage();
   const [isUserGuideOpen, setIsUserGuideOpen] = useState(false);
 
   const quickLinks = [
@@ -27,36 +29,34 @@ const Footer = () => {
           <div className="space-y-3 md:flex-1 md:max-w-sm">
             <div className="flex items-center gap-2 mb-4">
               <Info size={20} className="text-cyan-400" />
-              <h3 className="text-lg font-bold text-cyan-400 uppercase tracking-wide">About</h3>
+              <h3 className="text-lg font-bold text-cyan-400 uppercase tracking-wide">{t('footer.aboutTitle')}</h3>
             </div>
             <p className="text-slate-300 text-sm leading-relaxed">
-              PoE Build Analyzer automates item searches from your Path of Building builds.
-              Paste your PoB code or pobb.in URL, and instantly generate trade searches for all
-              your items with customizable filters.
+              {t('footer.aboutText1')}
             </p>
-            <p className="text-slate-300 text-sm leading-relaxed">The application is still under development and subject to change.</p>
+            <p className="text-slate-300 text-sm leading-relaxed">{t('footer.aboutText2')}</p>
           </div>
 
           {/* User Guide Section */}
           <div className="space-y-3 md:flex-1 md:max-w-sm">
             <div className="flex items-center gap-2 mb-4">
               <BookOpen size={20} className="text-cyan-400" />
-              <h3 className="text-lg font-bold text-cyan-400 uppercase tracking-wide">Resources</h3>
+              <h3 className="text-lg font-bold text-cyan-400 uppercase tracking-wide">{t('footer.resourcesTitle')}</h3>
             </div>
             <button
               onClick={() => setIsUserGuideOpen(true)}
               className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors text-sm group"
             >
               <BookOpen size={16} className="group-hover:scale-110 transition-transform" />
-              <span>User Guide & FAQ</span>
+              <span>{t('footer.userGuide')}</span>
             </button>
             <p className="text-slate-400 text-xs leading-relaxed">
-              Learn how to use all features, troubleshoot issues, and get pro tips for efficient item searching.
+              {t('footer.userGuideDesc')}
             </p>
             <div className="pt-2 space-y-1.5 text-xs text-slate-400">
-              <div>• Supports PoB codes & pobb.in URLs</div>
-              <div>• Real-time currency prices</div>
-              <div>• Customizable search filters</div>
+              <div>• {t('footer.feature1')}</div>
+              <div>• {t('footer.feature2')}</div>
+              <div>• {t('footer.feature3')}</div>
             </div>
           </div>
 
@@ -64,7 +64,7 @@ const Footer = () => {
           <div className="space-y-3 md:flex-1 md:max-w-xs">
             <div className="flex items-center gap-2 mb-4">
               <Link2 size={20} className="text-cyan-400" />
-              <h3 className="text-lg font-bold text-cyan-400 uppercase tracking-wide">Quick Links</h3>
+              <h3 className="text-lg font-bold text-cyan-400 uppercase tracking-wide">{t('footer.quickLinksTitle')}</h3>
             </div>
             <div className="space-y-2">
               {quickLinks.map((link, index) => (
@@ -97,7 +97,7 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Disclaimer */}
             <p className="text-slate-400 text-xs text-center md:text-left">
-              This site is fan-made and not affiliated with Grinding Gear Games in any way.
+              {t('footer.disclaimer')}
             </p>
 
             {/* Cherry Icon */}
