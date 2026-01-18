@@ -158,7 +158,8 @@ Examples:
       trouble2Title: 'No items showing',
       trouble2Desc: 'Check that your build has equipped items. The tool only analyzes equipped gear, not stash items.',
       trouble3Title: 'Trade search finds no results',
-      trouble3Desc: 'Try editing the item filters to be less restrictive, or search for a lower item level.'
+      trouble3Desc: 'Try editing the item filters to be less restrictive, or search for a lower item level.',
+      externalResources: 'External Resources'
     },
 
     // Language Selector
@@ -328,7 +329,8 @@ Ejemplos:
       trouble2Title: 'No se muestran objetos',
       trouble2Desc: 'Verifica que tu build tenga objetos equipados. La herramienta solo analiza equipo equipado, no objetos del stash.',
       trouble3Title: 'La búsqueda no encuentra resultados',
-      trouble3Desc: 'Intenta editar los filtros del objeto para ser menos restrictivo, o busca un nivel de objeto más bajo.'
+      trouble3Desc: 'Intenta editar los filtros del objeto para ser menos restrictivo, o busca un nivel de objeto más bajo.',
+      externalResources: 'Recursos Externos'
     },
 
     // Language Selector

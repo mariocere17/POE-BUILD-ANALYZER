@@ -231,51 +231,52 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
     }
   };
 
-  const handleFeatureRequest = () => {
-    // Check rate limit
-    if (!canSubmit('feature')) {
-      setSubmitStatus({
-        type: 'error',
-        message: `${t('reportModal.waitMessage')} ${formatTimeRemaining(timeRemaining.feature)} ${t('reportModal.beforeSubmitting')} ${t('reportModal.featureRequest')}`
-      });
-      setReportType(null);
-      return;
-    }
+  // GitHub Issues feature request functionality - COMMENTED OUT
+  // const handleFeatureRequest = () => {
+  //   // Check rate limit
+  //   if (!canSubmit('feature')) {
+  //     setSubmitStatus({
+  //       type: 'error',
+  //       message: `${t('reportModal.waitMessage')} ${formatTimeRemaining(timeRemaining.feature)} ${t('reportModal.beforeSubmitting')} ${t('reportModal.featureRequest')}`
+  //     });
+  //     setReportType(null);
+  //     return;
+  //   }
 
-    // Save timestamp to localStorage
-    localStorage.setItem(STORAGE_KEYS.lastFeatureRequest, Date.now().toString());
+  //   // Save timestamp to localStorage
+  //   localStorage.setItem(STORAGE_KEYS.lastFeatureRequest, Date.now().toString());
 
-    const title = encodeURIComponent('Feature Request: ');
-    const body = encodeURIComponent(`
-**Feature Description:**
-[Describe the feature you'd like to see]
+  //   const title = encodeURIComponent('Feature Request: ');
+  //   const body = encodeURIComponent(`
+  // **Feature Description:**
+  // [Describe the feature you'd like to see]
 
-**Why is this useful?**
-[Explain the use case]
+  // **Why is this useful?**
+  // [Explain the use case]
 
-**Game:** ${gameConfig?.selectedGame || 'N/A'}
-**League:** ${gameConfig?.selectedLeague || 'N/A'}
-    `);
+  // **Game:** ${gameConfig?.selectedGame || 'N/A'}
+  // **League:** ${gameConfig?.selectedLeague || 'N/A'}
+  //   `);
 
-    const githubUrl = `https://github.com/mariocere17/POE-BUILD-ANALYZER/issues/new?title=${title}&body=${body}`;
+  //   const githubUrl = `https://github.com/mariocere17/POE-BUILD-ANALYZER/issues/new?title=${title}&body=${body}`;
 
-    // Try to open in new window
-    const newWindow = window.open(githubUrl, '_blank', 'noopener,noreferrer');
+  //   // Try to open in new window
+  //   const newWindow = window.open(githubUrl, '_blank', 'noopener,noreferrer');
 
-    // Check if popup was blocked
-    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-      // Popup blocked - use direct navigation as fallback
-      console.warn('Popup blocked, using direct navigation');
-      window.location.href = githubUrl;
-    } else {
-      // Success - close modal after short delay
-      setTimeout(() => {
-        onClose();
-        setReportType(null);
-        setSubmitStatus(null);
-      }, 300);
-    }
-  };
+  //   // Check if popup was blocked
+  //   if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+  //     // Popup blocked - use direct navigation as fallback
+  //     console.warn('Popup blocked, using direct navigation');
+  //     window.location.href = githubUrl;
+  //   } else {
+  //     // Success - close modal after short delay
+  //     setTimeout(() => {
+  //       onClose();
+  //       setReportType(null);
+  //       setSubmitStatus(null);
+  //     }, 300);
+  //   }
+  // };
 
   const handleClose = () => {
     onClose();
@@ -291,17 +292,21 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
   const handleSelectReportType = (type) => {
     console.log('Report type selected:', type, 'Can submit:', type === 'bug' ? canSubmit('bug') : canSubmit('feature'));
 
-    if (type === 'feature') {
-      // Feature request opens GitHub immediately
-      if (canSubmit('feature')) {
-        handleFeatureRequest();
-      } else {
-        setSubmitStatus({
-          type: 'error',
-          message: `${t('reportModal.waitMessage')} ${formatTimeRemaining(timeRemaining.feature)} ${t('reportModal.beforeSubmitting')} ${t('reportModal.featureRequest')}`
-        });
-      }
-    } else {
+    // GitHub Issues feature request functionality - COMMENTED OUT
+    // if (type === 'feature') {
+    //   // Feature request opens GitHub immediately
+    //   if (canSubmit('feature')) {
+    //     handleFeatureRequest();
+    //   } else {
+    //     setSubmitStatus({
+    //       type: 'error',
+    //       message: `${t('reportModal.waitMessage')} ${formatTimeRemaining(timeRemaining.feature)} ${t('reportModal.beforeSubmitting')} ${t('reportModal.featureRequest')}`
+    //     });
+    //   }
+    // } else {
+
+    // Only bug report is active now
+    if (type === 'bug') {
       // Bug report opens form
       if (canSubmit('bug')) {
         setReportType(type);
@@ -312,6 +317,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
         });
       }
     }
+    // } // End of commented feature request block
   };
 
   return (
@@ -369,7 +375,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                 </div>
               </button>
 
-              {/* Feature Request Option */}
+              {/* Feature Request Option - COMMENTED OUT (GitHub Issues disabled)
               <button
                 onClick={() => handleSelectReportType('feature')}
                 disabled={!canSubmit('feature')}
@@ -399,6 +405,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                   </div>
                 </div>
               </button>
+              */}
 
               {/* Rate Limit Error Display */}
               {submitStatus && (
