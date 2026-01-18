@@ -1,5 +1,5 @@
 // src/hooks/useBuildAnalyzer.js
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { parsePoB } from '../services/pobParser';
 import { generateTradeURL } from '../services/tradeAPI';
 import { fetchStatIds } from '../services/statsAPI';
@@ -15,10 +15,20 @@ export const useBuildAnalyzer = () => {
   const [game, setGame] = useState('poe2');
   const [league, setLeague] = useState(LEAGUES.poe2[0].value);
   const [copiedIndex, setCopiedIndex] = useState(null);
-  const [statCache, setStatCache] = useState(null);
   const [sellerStatus, setSellerStatus] = useState('any');
 
-  const handleParsePoB = async () => {
+  // Use ref for stat cache to avoid re-creating callbacks when cache updates
+  const statCacheRef = useRef(null);
+
+  const handleFetchStats = useCallback(async (currentGame) => {
+    const stats = await fetchStatIds(currentGame, statCacheRef.current);
+    if (stats && !statCacheRef.current) {
+      statCacheRef.current = stats;
+    }
+    return stats;
+  }, []);
+
+  const handleParsePoB = useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -33,40 +43,32 @@ export const useBuildAnalyzer = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pobCode]);
 
-  const handleFetchStats = async () => {
-    const stats = await fetchStatIds(game, statCache);
-    if (stats && !statCache) {
-      setStatCache(stats);
-    }
-    return stats;
-  };
-
-  const handleCopyToClipboard = async (item, index) => {
-    const stats = await handleFetchStats();
+  const handleCopyToClipboard = useCallback(async (item, index) => {
+    const stats = await handleFetchStats(game);
     const url = await generateTradeURL(item, game, league, sellerStatus, stats);
     navigator.clipboard.writeText(url);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
-  };
+  }, [game, league, sellerStatus, handleFetchStats]);
 
-  const handleOpenTradeURL = async (item) => {
+  const handleOpenTradeURL = useCallback(async (item) => {
     try {
-      const stats = await handleFetchStats();
+      const stats = await handleFetchStats(game);
       const url = await generateTradeURL(item, game, league, sellerStatus, stats);
       // Sanitizar URL antes de abrir en nueva ventana
       const safeUrl = sanitizeTradeURL(url);
       window.open(safeUrl, '_blank', 'noopener,noreferrer');
-    } catch (error) {
-      console.error('Error opening trade URL:', error);
+    } catch (err) {
+      console.error('Error opening trade URL:', err);
       setError('Failed to open trade URL. Please try again.');
     }
-  };
+  }, [game, league, sellerStatus, handleFetchStats]);
 
-  const handleSaveItem = (editedItem) => {
-    setItems(items.map(i => i.id === editedItem.id ? editedItem : i));
-  };
+  const handleSaveItem = useCallback((editedItem) => {
+    setItems(prevItems => prevItems.map(i => i.id === editedItem.id ? editedItem : i));
+  }, []);
 
   return {
     // State

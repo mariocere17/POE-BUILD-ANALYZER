@@ -1,10 +1,10 @@
 // src/components/BuildAnalyzer/ItemCard.jsx
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Edit2, Copy, Check, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { getRarityColor } from '../../utils/rarityColors';
 import { useLanguage } from '../../i18n/LanguageContext';
 
-const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => {
+const ItemCard = memo(({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => {
   const { t } = useLanguage();
   const [showAllEnchants, setShowAllEnchants] = useState(false);
   const [showAllImplicits, setShowAllImplicits] = useState(false);
@@ -197,6 +197,21 @@ const ItemCard = ({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }) => 
       )}
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparator: only re-render when these props actually change
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.index === nextProps.index &&
+    prevProps.copiedIndex === nextProps.copiedIndex &&
+    // Compare item content that affects rendering
+    prevProps.item.name === nextProps.item.name &&
+    prevProps.item.rarity === nextProps.item.rarity &&
+    prevProps.item.ilvl === nextProps.item.ilvl &&
+    prevProps.item.corrupted === nextProps.item.corrupted &&
+    prevProps.item.enchantMods.length === nextProps.item.enchantMods.length &&
+    prevProps.item.implicitMods.length === nextProps.item.implicitMods.length &&
+    prevProps.item.explicitMods.length === nextProps.item.explicitMods.length
+  );
+});
 
 export default ItemCard;
