@@ -3,7 +3,7 @@
 ## Project Overview
 PoE Build Analyzer es una aplicación React que genera enlaces de trade automáticos para Path of Exile 2 basándose en builds importadas desde pobb.in.
 
-## Current Session Work (2026-01-19)
+## Session Work (2026-01-19)
 
 ### Problems Solved
 
@@ -14,37 +14,45 @@ PoE Build Analyzer es una aplicación React que genera enlaces de trade automát
 3. Text variations exist (e.g., "maximum Mana" vs "Mana")
 4. Some PoE2-specific stats are NOT in the Trade API stats endpoint but DO exist in trade searches
 
+**Solution:** Implemented a 3-tier stat lookup system:
+1. `DIRECT_STAT_MAPPINGS` - Hardcoded IDs for stats missing from API
+2. `findStatIdExact()` - Exact matching with `STAT_ALIASES` transformations
+3. `findStatIdFuzzy()` - Token-based fuzzy matching as fallback
+
 #### 2. Item Properties Being Treated as Mods
-**Issue:** Item base properties like "Energy Shield: 190" were being incorrectly parsed as explicit mods and included in trade searches.
+**Issue:** Item base properties like "Energy Shield: 190" were being incorrectly parsed as explicit mods.
 
 **Solution:** Added filters in `pobParser.js` to skip item property lines.
 
-#### 3. Fuzzy Matching System
-**Issue:** Manual 1:1 stat mappings are not scalable.
+#### 3. Time-Lost Jewel Stats
+**Issue:** Time-Lost Jewels have unique stats like "Notable Passive Skills in Radius also grant X" that are NOT in the stats API but DO exist in trade searches.
 
-**Solution:** Implemented a fuzzy token-based matching system as fallback when exact matching fails.
+**Solution:** Added known stat IDs to `DIRECT_STAT_MAPPINGS`. New stats must be discovered by inspecting trade JSON responses.
 
-### Solution Implemented
-
-**Files Modified:**
-- `src/services/statsAPI.js` - Added fuzzy matching system, alias system, and direct stat ID mappings
-- `src/services/tradeAPI.js` - Added debug logging (development only)
-- `src/services/pobParser.js` - Added filters to exclude item properties from mod parsing
+**Limitation:** There are MANY different Time-Lost Jewel stats (each "grant X" variant has a unique ID). Only commonly used ones are mapped.
 
 ---
 
-## Key Code Changes
+## Files Modified
 
-### statsAPI.js
+| File | Changes |
+|------|---------|
+| `src/services/statsAPI.js` | Fuzzy matching, aliases, direct mappings, validateStatId |
+| `src/services/tradeAPI.js` | Debug logging (dev only) |
+| `src/services/pobParser.js` | Item property filters |
+| `src/hooks/useBuildAnalyzer.js` | Dev default pobb.in URL |
 
-#### Feature Flag (Line 11-12)
-Toggle fuzzy matching on/off for easy rollback:
+---
+
+## Key Code in statsAPI.js
+
+### Feature Flags (Lines 11-12)
 ```javascript
 const USE_FUZZY_MATCHING = true;
 const FUZZY_MIN_SCORE = 0.75; // Minimum similarity score (0-1)
 ```
 
-#### STAT_ALIASES Array (Line 18-23)
+### STAT_ALIASES (Lines 18-29)
 Transforms PoB terminology to Trade API terminology:
 ```javascript
 const STAT_ALIASES = [
@@ -57,67 +65,109 @@ const STAT_ALIASES = [
 ];
 ```
 
-#### DIRECT_STAT_MAPPINGS Object (Lines 36-58)
-For stats that are NOT in the Trade API stats endpoint but DO exist in trade:
+### DIRECT_STAT_MAPPINGS (Lines 36-58)
+Stats NOT in API but exist in trade (discovered via JSON inspection):
 ```javascript
 const DIRECT_STAT_MAPPINGS = {
-  // Critical Hit/Strike Chance - uses Global stat ID in PoE2
+  // Global Critical Hit/Strike Chance for jewels
   '#% increased Critical Hit Chance': 'explicit.stat_587431675',
   '#% increased Critical Strike Chance': 'explicit.stat_587431675',
-  // Essence of Horror mod - not in stats API but exists in trade
+  // Essence of Horror mod
   '#% increased effect of Socketed Items': 'explicit.stat_2081918629',
-  // Spirit stat - PoE2 specific, not in stats API
+  // Spirit stat (PoE2 specific)
   '# to Spirit': 'explicit.stat_3981240776',
   '+# to Spirit': 'explicit.stat_3981240776',
   // Time-Lost Jewel stats
   'Upgrades Radius to Large': 'explicit.stat_3891355829|2',
   'Notable Passive Skills in Radius also grant #% increased Critical Hit Chance': 'explicit.stat_2077117738',
+  'Notable Passive Skills in Radius also grant #% increased Critical Strike Chance': 'explicit.stat_2077117738',
+  'Notable Passive Skills in Radius also grant #% increased Critical Hit Chance for Spells': 'explicit.stat_2704905000',
+  'Notable Passive Skills in Radius also grant #% increased Critical Strike Chance for Spells': 'explicit.stat_2704905000',
   'Small Passive Skills in Radius also grant #% increased maximum Energy Shield': 'explicit.stat_3665922113',
-  // ... more Time-Lost stats added as discovered
 };
 ```
 
-**Note:** Time-Lost Jewels have MANY different "Notable/Small Passive Skills in Radius also grant X" stats. Only commonly used ones are mapped. To add more, inspect trade JSON responses for the stat ID.
-
-#### Fuzzy Matching System (Lines 40-220)
-Token-based matching with bidirectional scoring:
-
-1. **WORD_SYNONYMS**: Normalizes terminology differences
-   - `hit` → `strike`
-   - `maximum` → `` (removed)
-
-2. **STOP_WORDS**: Common words removed during tokenization
-   - `to`, `the`, `a`, `an`, `of`, `for`, `with`, `on`, `by`, `per`, `and`, `or`
-
-3. **tokenizeAndNormalize()**: Converts mod text to comparable tokens
-   - `"#% increased Critical Hit Chance"` → `["increased", "critical", "strike", "chance"]`
-
-4. **calculateTokenSimilarity()**: Bidirectional scoring
-   - Requires BOTH directions to match well (geometric mean)
-   - Prevents matching generic stats to specific ones
-   - Penalizes large size differences
-
-5. **findStatIdFuzzy()**: Finds best matching stat above threshold
-
-#### Stat Lookup Priority (findStatId function)
+### Stat Lookup Priority
 ```
-1. DIRECT_STAT_MAPPINGS (hardcoded IDs for missing stats)
+1. DIRECT_STAT_MAPPINGS → if found, return immediately
       ↓ not found
-2. findStatIdExact() (legacy system with STAT_ALIASES)
+2. findStatIdExact() → exact match with STAT_ALIASES
       ↓ not found
-3. findStatIdFuzzy() (if USE_FUZZY_MATCHING = true)
+3. findStatIdFuzzy() → token-based fuzzy matching (if enabled)
       ↓ not found
-4. Return null (stat won't be included in search)
+4. Return null → stat excluded from search
+```
+
+### validateStatId Function
+Validates stat IDs from BOTH the API cache AND `DIRECT_STAT_MAPPINGS`:
+```javascript
+export const validateStatId = (stats, statId) => {
+  const directMappingIds = Object.values(DIRECT_STAT_MAPPINGS);
+  if (directMappingIds.includes(statId)) return true;
+  // ... also checks stats.result
+};
 ```
 
 ---
 
-### pobParser.js
+## Known Stat ID Mappings for PoE2
 
-#### Item Property Filters (Lines 232-244)
-Added filters to prevent item base stats from being parsed as mods:
+Stats NOT in API but exist in trade (discovered via trade JSON inspection):
+
+| Mod Text | Stat ID | Source |
+|----------|---------|--------|
+| `#% increased Critical Hit Chance` | `explicit.stat_587431675` | Jewels (Global) |
+| `#% increased effect of Socketed Items` | `explicit.stat_2081918629` | Essence of Horror |
+| `+# to Spirit` | `explicit.stat_3981240776` | Body Armour, etc. |
+| `Upgrades Radius to Large` | `explicit.stat_3891355829\|2` | Time-Lost Jewels |
+| `Notable Passive Skills in Radius also grant #% increased Critical Hit Chance` | `explicit.stat_2077117738` | Time-Lost Jewels |
+| `Notable Passive Skills in Radius also grant #% increased Critical Hit Chance for Spells` | `explicit.stat_2704905000` | Time-Lost Jewels |
+| `Small Passive Skills in Radius also grant #% increased maximum Energy Shield` | `explicit.stat_3665922113` | Time-Lost Jewels |
+
+---
+
+## How to Add New Stat Mappings
+
+### Method: Inspect Trade JSON Response
+1. Search for an item with the desired mod on pathofexile.com/trade2
+2. Open browser DevTools → Network tab
+3. Find the search response (POST to `/api/trade2/search/...`)
+4. Look in `result[].item.extended.mods.explicit[].magnitudes[].hash`
+5. Add to `DIRECT_STAT_MAPPINGS`:
 ```javascript
-// Item properties (not mods) - these are base stats of the item
+'Exact mod text with # for numbers': 'explicit.stat_XXXXXXXX',
+```
+
+### If stat text differs between PoB and Trade API:
+Add to `STAT_ALIASES`:
+```javascript
+{ from: /PoB Text Pattern/gi, to: 'Trade API Text' },
+```
+
+---
+
+## Debug Logging (Development Only)
+
+### statsAPI.js
+- `[STATS] Direct mapping: "..." -> ...` - DIRECT_STAT_MAPPINGS hit
+- `[STATS] Trying variations for "...":` - STAT_ALIASES applied
+- `[STATS] Searching for cleanMod: "..."` - Exact match attempt
+- `[STATS] Exact match failed, trying fuzzy matching for: "..."` - Fallback
+- `[STATS] Fuzzy match: "..." -> "..." (score: X.XX)` - Success
+- `[STATS] Fuzzy match rejected (score too low)` - Below threshold
+- `[STATS] No match found for: "..."` - Complete failure
+
+### tradeAPI.js
+- `[TRADE] Processing item mods` - Item and mods being processed
+- `[EXPLICIT N] "..." -> ...` - Individual mod → stat ID
+- `[TRADE] Generated Query` - Final JSON and URL
+
+---
+
+## Item Property Filters (pobParser.js)
+
+Lines filtered to prevent base stats from being parsed as mods:
+```javascript
 line.startsWith('Energy Shield:') ||
 line.startsWith('Armour:') ||
 line.startsWith('Evasion:') ||
@@ -132,107 +182,40 @@ line.startsWith('Weapon Range:') ||
 line.startsWith('Spirit:') ||
 ```
 
-These lines represent calculated item stats (after quality, % mods, etc.) and should NOT be searchable mods.
-
 ---
 
-## Known Stat ID Mappings for PoE2
+## Development Convenience
 
-Stats that are NOT in the API but exist in trade (discovered via trade response inspection):
-
-| Mod Text | Stat ID | Source |
-|----------|---------|--------|
-| `#% increased Critical Hit Chance` | `explicit.stat_587431675` | Jewels (Global) |
-| `#% increased effect of Socketed Items` | `explicit.stat_2081918629` | Essence of Horror |
-| `+# to Spirit` | `explicit.stat_3981240776` | Body Armour, etc. |
-| `Upgrades Radius to Large` | `explicit.stat_3891355829\|2` | Time-Lost Jewels |
-| `Notable Passive Skills in Radius also grant #% increased Critical Hit Chance` | `explicit.stat_2077117738` | Time-Lost Jewels |
-| `Notable Passive Skills in Radius also grant #% increased Critical Hit Chance for Spells` | `explicit.stat_2704905000` | Time-Lost Jewels |
-| `Small Passive Skills in Radius also grant #% increased maximum Energy Shield` | `explicit.stat_3665922113` | Time-Lost Jewels |
-
-Stats in the API (for reference):
-- `explicit.stat_737908626` = `#% increased Spell Critical Strike Chance`
-- `explicit.stat_3291658075` = `#% increased Cold Damage`
-- `explicit.stat_1782086450` = `#% faster start of Energy Shield Recharge`
-- `explicit.stat_2974417149` = `#% increased Spell Damage`
-- `explicit.stat_2891184298` = `#% increased Cast Speed`
-- `explicit.stat_3489782002` = `+# to maximum Energy Shield`
-- `explicit.stat_2482852589` = `#% increased maximum Energy Shield`
-
----
-
-## Debug Logging
-
-Development-only logging (`process.env.NODE_ENV === 'development'`):
-
-### statsAPI.js
-- `[STATS] Direct mapping: "..." -> ...` - When a DIRECT_STAT_MAPPINGS entry is used
-- `[STATS] Trying variations for "...":` - Shows STAT_ALIASES transformations
-- `[STATS] Searching for cleanMod: "..."` - Exact match attempt
-- `[STATS] Exact match failed, trying fuzzy matching for: "..."` - Fallback to fuzzy
-- `[STATS] Fuzzy match: "..." -> "..." (score: X.XX) = ...` - Successful fuzzy match
-- `[STATS] Fuzzy match rejected (score too low): "..." -> "..." (score: X.XX, min: 0.75)` - Rejected fuzzy match
-- `[STATS] No match found for: "..." (type: explicit)` - Complete failure
-
-### tradeAPI.js
-- `🔍 [TRADE] Processing item mods` - Shows item and selected mods
-- `[EXPLICIT N] "..." -> ...` - Individual mod → stat ID mapping
-- `📦 [TRADE] Generated Query` - Final JSON query and URL
-
----
-
-## How to Add New Stat Mappings
-
-### If the stat text is slightly different (PoB vs Trade API):
-Add to `STAT_ALIASES`:
+Default pobb.in URL pre-filled in development mode:
 ```javascript
-{ from: /PoB Text/gi, to: 'Trade API Text' },
-```
-
-### If the stat ID is completely missing from the API:
-1. Find an item with that mod on the trade site
-2. Inspect the network response or item JSON
-3. Find the `hash` value in `extended.mods.explicit[].magnitudes[].hash`
-4. Add to `DIRECT_STAT_MAPPINGS`:
-```javascript
-'#% normalized mod text': 'explicit.stat_XXXXXXXX',
+// src/hooks/useBuildAnalyzer.js
+const DEV_DEFAULT_POB = process.env.NODE_ENV === 'development'
+  ? 'https://pobb.in/VVZy6u-NrRUi'
+  : '';
 ```
 
 ---
-
-## Files Structure
-```
-src/
-├── services/
-│   ├── statsAPI.js      # Stat ID lookup with fuzzy matching
-│   ├── tradeAPI.js      # Trade URL generation
-│   └── pobParser.js     # PoB code parsing with property filters
-├── hooks/
-│   └── useBuildAnalyzer.js  # Main state management
-└── components/
-    └── BuildAnalyzer/   # UI components
-```
-
-## API Endpoints
-- Stats API: `/api/stats?realm=poe2` (proxied from pathofexile.com)
-- Static fallback: `/data/poe2-stats.json`
-- Cache: localStorage `poe_stats_cache_poe2` (24h TTL)
 
 ## Commands
 - `npm start` - Development server (port 3000)
 - `npm run dev:api` - Proxy server (port 3001)
 - `npm run build` - Production build
 
+## API Endpoints
+- Stats API: `/api/stats?realm=poe2` (proxied)
+- Static fallback: `/data/poe2-stats.json`
+- Cache: localStorage `poe_stats_cache_poe2` (24h TTL)
+
+---
+
 ## Rollback Instructions
 
 ### Disable Fuzzy Matching
-In `statsAPI.js`, change:
 ```javascript
 const USE_FUZZY_MATCHING = false;
 ```
 
 ### Adjust Fuzzy Sensitivity
-In `statsAPI.js`, change the minimum score (higher = stricter):
 ```javascript
-const FUZZY_MIN_SCORE = 0.80; // Default is 0.75
+const FUZZY_MIN_SCORE = 0.80; // Higher = stricter (default 0.75)
 ```
