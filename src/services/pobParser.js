@@ -216,7 +216,7 @@ export const parsePoB = async (code) => {
         continue;
       }
 
-      // Saltar líneas de metadata
+      // Saltar líneas de metadata y propiedades de item (no son mods)
       if (line.startsWith('Unique ID:') ||
         line.startsWith('Item Level:') ||
         line.startsWith('Quality:') ||
@@ -229,6 +229,19 @@ export const parsePoB = async (code) => {
         line.startsWith('Grants Skill:') ||
         line.startsWith('Radius:') ||
         line.startsWith('Limited to:') ||
+        // Item properties (not mods) - these are base stats of the item
+        line.startsWith('Energy Shield:') ||
+        line.startsWith('Armour:') ||
+        line.startsWith('Evasion:') ||
+        line.startsWith('Ward:') ||
+        line.startsWith('Block:') ||
+        line.startsWith('Physical Damage:') ||
+        line.startsWith('Elemental Damage:') ||
+        line.startsWith('Chaos Damage:') ||
+        line.startsWith('Critical Hit Chance:') ||
+        line.startsWith('Attacks per Second:') ||
+        line.startsWith('Weapon Range:') ||
+        line.startsWith('Spirit:') ||
         line === 'Corrupted' ||
         line === name ||
         line === baseType) {

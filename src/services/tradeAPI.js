@@ -85,10 +85,21 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
   if (stats && stats.result) {
     const statFilters = [];
 
+    // DEBUG: Log para desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.group('🔍 [TRADE] Processing item mods');
+      console.log('Item:', item.name || item.baseType);
+      console.log('Explicit mods:', item.explicitMods);
+      console.log('Selected explicits:', item.filters.selectedExplicits);
+    }
+
     // Procesar enchants
     item.enchantMods.forEach((mod, i) => {
       if (item.filters.selectedEnchants[i]) {
         const statId = findStatId(stats, mod.normalized, 'enchant');
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[ENCHANT ${i}] "${mod.normalized}" -> ${statId || '❌ NOT FOUND'}`);
+        }
         if (statId) {
           const filter = { id: statId, disabled: false };
           const minKey = `enchant_${i}`;
@@ -109,6 +120,9 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
     item.implicitMods.forEach((mod, i) => {
       if (item.filters.selectedImplicits[i]) {
         const statId = findStatId(stats, mod.normalized, 'implicit');
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[IMPLICIT ${i}] "${mod.normalized}" -> ${statId || '❌ NOT FOUND'}`);
+        }
         if (statId) {
           const filter = { id: statId, disabled: false };
           const minKey = `implicit_${i}`;
@@ -129,6 +143,9 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
     item.explicitMods.forEach((mod, i) => {
       if (item.filters.selectedExplicits[i]) {
         const statId = findStatId(stats, mod.normalized, 'explicit');
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[EXPLICIT ${i}] "${mod.normalized}" -> ${statId || '❌ NOT FOUND'}`);
+        }
         if (statId) {
           const filter = { id: statId, disabled: false };
           const minKey = `explicit_${i}`;
@@ -154,6 +171,11 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
       return isValid;
     });
 
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Valid stat filters:', validStatFilters);
+      console.groupEnd();
+    }
+
     // Añadir stats válidos al query
     if (validStatFilters.length > 0) {
       query.query.stats.push({
@@ -169,7 +191,10 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
   // Construir URL final
   const finalURL = `${baseURL}/${leagueParam}?q=${encodedQuery}`;
   if (process.env.NODE_ENV === 'development') {
+    console.group('📦 [TRADE] Generated Query');
+    console.log('Query object:', JSON.stringify(query, null, 2));
     console.log('Generated URL:', finalURL);
+    console.groupEnd();
   }
 
   return finalURL;

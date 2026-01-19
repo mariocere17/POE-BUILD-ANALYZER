@@ -6,8 +6,13 @@ import { fetchStatIds } from '../services/statsAPI';
 import { sanitizeTradeURL } from '../config/apiConfig';
 import { LEAGUES } from '../utils/constants';
 
+// Default pobb.in URL for development convenience
+const DEV_DEFAULT_POB = process.env.NODE_ENV === 'development'
+  ? 'https://pobb.in/VVZy6u-NrRUi'
+  : '';
+
 export const useBuildAnalyzer = () => {
-  const [pobCode, setPobCode] = useState('');
+  const [pobCode, setPobCode] = useState(DEV_DEFAULT_POB);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
