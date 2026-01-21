@@ -8,7 +8,7 @@ import { LEAGUES } from '../utils/constants';
 
 // Default pobb.in URL for development convenience
 const DEV_DEFAULT_POB = process.env.NODE_ENV === 'development'
-  ? 'https://pobb.in/VVZy6u-NrRUi'
+  ? 'https://pobb.in/b9xtMTSdeHFw'
   : '';
 
 export const useBuildAnalyzer = () => {
@@ -17,8 +17,8 @@ export const useBuildAnalyzer = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [editingItem, setEditingItem] = useState(null);
-  const [game, setGame] = useState('poe2');
-  const [league, setLeague] = useState(LEAGUES.poe2[0].value);
+  const [game, setGame] = useState('poe1');
+  const [league, setLeague] = useState(LEAGUES.poe1[0].value);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [sellerStatus, setSellerStatus] = useState('any');
 

@@ -37,7 +37,10 @@
       "Bash(git push:*)",
       "Bash(tasklist:*)",
       "Bash(set:*)",
-      "Bash(npx cross-env:*)"
+      "Bash(npx cross-env:*)",
+      "Bash(python3:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
