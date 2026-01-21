@@ -5,6 +5,73 @@ PoE Build Analyzer es una aplicación React que genera enlaces de trade automát
 
 ---
 
+## Session Work (2026-01-21) - Item Category Filtering
+
+### New Feature: Item Category Filter
+
+Added a dropdown selector next to "Items Found (X)" to filter items by category.
+
+#### Categories Available
+- **All** - Shows all items
+- **Weapons** - Swords, axes, bows, wands, staves, quivers, etc.
+- **Armour** - Helmets, body armour, gloves, boots
+- **Accessories** - Rings, amulets, belts
+- **Flasks** - All flask types
+- **Jewels** - PoE1 jewels and PoE2 jewels (Emerald, Ruby, Sapphire, Diamond, Time-Lost variants, Timeless)
+- **Grafts** (PoE1 only) - Eshgraft, Tulgraft, Uulgraft, Xophgraft, Fleshgraft
+- **Charms** (PoE2 only) - Charm items
+
+#### Implementation Details
+
+**Files Modified:**
+- `src/utils/constants.js` - Added `ITEM_CATEGORIES`, `GRAFT_TYPES`, `POE2_JEWEL_TYPES`, `getItemCategory()`
+- `src/components/BuildAnalyzer/ItemList.jsx` - Added category selector with dynamic options
+- `src/i18n/translations.js` - Added translations for all categories (EN/ES)
+- `src/utils/rarityColors.js` - Added support for "Relic" rarity (shows as orange like unique)
+- `src/services/tradeAPI.js` - Fixed Relic items to search as unique in trade
+
+**Key Code:**
+
+```javascript
+// ITEM_CATEGORIES
+export const ITEM_CATEGORIES = {
+  all: 'all',
+  weapons: 'weapons',
+  armour: 'armour',
+  accessories: 'accessories',
+  flasks: 'flasks',
+  jewels: 'jewels',
+  grafts: 'grafts',  // PoE1 only
+  charms: 'charms'   // PoE2 only
+};
+
+// PoE2 jewels don't have "jewel" in name - exact match required
+export const POE2_JEWEL_TYPES = [
+  'emerald', 'ruby', 'sapphire', 'diamond',
+  'time-lost emerald', 'time-lost ruby', 'time-lost sapphire', 'time-lost diamond',
+  'timeless jewel'
+];
+
+// PoE1 Keepers league grafts
+export const GRAFT_TYPES = ['eshgraft', 'tulgraft', 'uulgraft', 'xophgraft', 'fleshgraft'];
+```
+
+**Category Detection Order (important to avoid false positives):**
+1. Grafts (PoE1 league items)
+2. Charms (PoE2 items)
+3. Flasks (before jewels - "Amethyst Flask" contains "Amethyst")
+4. Accessories (before jewels - "Amethyst Ring" contains "Amethyst")
+5. Jewels (PoE1 with "jewel" in name, PoE2 with exact match)
+6. Weapons
+7. Armour
+8. Default fallback to armour
+
+**Dynamic Category Display:**
+- Grafts category only shown if build contains graft items
+- Charms category only shown if build contains charm items
+
+---
+
 ## Session Work (2026-01-21) - PoE1 Support Fixes
 
 ### Problems Solved

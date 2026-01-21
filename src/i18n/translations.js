@@ -33,7 +33,18 @@ Examples:
     itemList: {
       itemsFound: 'Items Found',
       league: 'League',
-      status: 'Status'
+      status: 'Status',
+      category: 'Category',
+      categories: {
+        all: 'All',
+        weapons: 'Weapons',
+        armour: 'Armour',
+        accessories: 'Accessories',
+        flasks: 'Flasks',
+        jewels: 'Jewels',
+        grafts: 'Grafts',
+        charms: 'Charms'
+      }
     },
 
     // Item Card
@@ -204,7 +215,18 @@ Ejemplos:
     itemList: {
       itemsFound: 'Objetos Encontrados',
       league: 'Liga',
-      status: 'Estado'
+      status: 'Estado',
+      category: 'Categoría',
+      categories: {
+        all: 'Todos',
+        weapons: 'Armas',
+        armour: 'Armadura',
+        accessories: 'Accesorios',
+        flasks: 'Frascos',
+        jewels: 'Joyas',
+        grafts: 'Injertos',
+        charms: 'Amuletos'
+      }
     },
 
     // Item Card

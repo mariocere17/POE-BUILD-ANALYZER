@@ -34,8 +34,12 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
   // Detectar si es una joya
   const isJewel = JEWEL_TYPES.includes(item.baseType);
 
-  // Para uniques, buscar por nombre y tipo exacto
-  if (item.rarity === 'unique') {
+  // Normalizar rareza - Relic es tratado como unique para búsquedas
+  const rarityLower = item.rarity?.toLowerCase();
+  const isUnique = rarityLower === 'unique' || rarityLower === 'relic';
+
+  // Para uniques (y relics), buscar por nombre y tipo exacto
+  if (isUnique) {
     query.query.name = item.name;
     query.query.type = item.baseType;
   } else if (isJewel) {
@@ -47,9 +51,11 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
   }
 
   // Añadir filtro de rareza
-  if (item.rarity && item.rarity !== 'normal') {
+  if (item.rarity && rarityLower !== 'normal') {
+    // Relic se busca como unique en el trade
+    const searchRarity = rarityLower === 'relic' ? 'unique' : rarityLower;
     query.query.filters.type_filters.filters.rarity = {
-      option: item.rarity
+      option: searchRarity
     };
   }
 
