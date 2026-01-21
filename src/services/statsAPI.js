@@ -29,6 +29,30 @@ const STAT_ALIASES = [
 ];
 
 /**
+ * Mods that are LOCAL to items and cannot be searched in trade stats
+ * These should be excluded from stat searches (return null immediately)
+ * Includes flask local mods that modify the flask itself
+ */
+const UNSEARCHABLE_MODS = [
+  // Flask trigger enchants - these are local and not searchable
+  'Used when Charges reach full',
+  'Used when you Hit a Rare or Unique Enemy, if not already in effect',
+  'Used when you use a Skill',
+  'Used when you take a Savage Hit',
+  'Reused at the end of this Flask\'s Effect',
+];
+
+/**
+ * Mods where "reduced X" should be transformed to "increased X" with negative value
+ * In PoE, some mods only exist as "increased" and "reduced" is represented as negative values
+ * Format: { pattern: regex to match, replacement: string to replace with }
+ */
+const REDUCED_TO_INCREASED_MODS = [
+  { pattern: /^#% reduced Duration$/i, replacement: '#% increased Duration' },
+  { pattern: /^#% reduced effect$/i, replacement: '#% increased effect' },
+];
+
+/**
  * Additional direct stat ID mappings for stats that have different IDs in PoE2
  * or are not in the stats API endpoint but exist in trade searches
  * These are checked FIRST before text matching
@@ -455,6 +479,29 @@ const findStatIdExact = (stats, normalizedMod, modType) => {
 };
 
 /**
+ * Transforms "reduced X" mods to "increased X" format for trade search
+ * In PoE, some mods only exist as "increased" version, and "reduced" is negative value
+ * @param {string} normalizedMod - The normalized mod text
+ * @param {number} value - The original mod value (positive number from "reduced" mod)
+ * @returns {{mod: string, value: number, transformed: boolean}} Transformed mod and value
+ */
+export const transformReducedMod = (normalizedMod, value) => {
+  for (const { pattern, replacement } of REDUCED_TO_INCREASED_MODS) {
+    if (pattern.test(normalizedMod)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[STATS] Transforming reduced->increased: "${normalizedMod}" (${value}) -> "${replacement}" (${-value})`);
+      }
+      return {
+        mod: replacement,
+        value: -value, // Negate the value for "reduced" -> "increased" transformation
+        transformed: true
+      };
+    }
+  }
+  return { mod: normalizedMod, value, transformed: false };
+};
+
+/**
  * Finds the stat ID for a given normalized mod text
  * Uses direct mappings first, then exact matching, then fuzzy matching (if enabled)
  * @param {object} stats - Stats data from API
@@ -464,6 +511,14 @@ const findStatIdExact = (stats, normalizedMod, modType) => {
  */
 export const findStatId = (stats, normalizedMod, modType) => {
   if (!stats || !stats.result) return null;
+
+  // 0. Check if this is an unsearchable local mod (flask mods, etc.)
+  if (UNSEARCHABLE_MODS.some(mod => normalizedMod === mod || normalizedMod.includes(mod.replace('#', '')))) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[STATS] Skipping unsearchable local mod: "${normalizedMod}"`);
+    }
+    return null;
+  }
 
   // 1. Check direct mappings FIRST (for stats with known different IDs in PoE2)
   if (modType === 'explicit' && DIRECT_STAT_MAPPINGS[normalizedMod]) {

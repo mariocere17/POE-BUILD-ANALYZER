@@ -1,6 +1,6 @@
 // src/services/tradeAPI.js
 import { JEWEL_TYPES, TRADE_BASE_URLS } from '../utils/constants';
-import { findStatId, validateStatId } from './statsAPI';
+import { findStatId, validateStatId, transformReducedMod } from './statsAPI';
 
 /**
  * Generates a trade URL for a given item
@@ -142,19 +142,31 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
     // Procesar explícitos
     item.explicitMods.forEach((mod, i) => {
       if (item.filters.selectedExplicits[i]) {
-        const statId = findStatId(stats, mod.normalized, 'explicit');
+        // Transform "reduced X" mods to "increased X" with negative value
+        const minKey = `explicit_${i}`;
+        const originalValue = item.filters.minValues[minKey] || mod.value;
+        const { mod: transformedMod, value: transformedValue, transformed } = transformReducedMod(mod.normalized, originalValue);
+
+        const statId = findStatId(stats, transformedMod, 'explicit');
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[EXPLICIT ${i}] "${mod.normalized}" -> ${statId || '❌ NOT FOUND'}`);
+          if (transformed) {
+            console.log(`[EXPLICIT ${i}] "${mod.normalized}" (${originalValue}) -> transformed to "${transformedMod}" (${transformedValue}) -> ${statId || '❌ NOT FOUND'}`);
+          } else {
+            console.log(`[EXPLICIT ${i}] "${mod.normalized}" -> ${statId || '❌ NOT FOUND'}`);
+          }
         }
         if (statId) {
           const filter = { id: statId, disabled: false };
-          const minKey = `explicit_${i}`;
           const maxKey = `explicit_${i}`;
 
-          if (item.filters.minValues[minKey] || item.filters.maxValues[maxKey]) {
+          // Use transformed value if mod was transformed, otherwise use original
+          const minValue = transformed ? transformedValue : item.filters.minValues[minKey];
+          const maxValue = item.filters.maxValues[maxKey];
+
+          if (minValue !== undefined || maxValue !== undefined) {
             filter.value = {};
-            if (item.filters.minValues[minKey]) filter.value.min = item.filters.minValues[minKey];
-            if (item.filters.maxValues[maxKey]) filter.value.max = item.filters.maxValues[maxKey];
+            if (minValue !== undefined) filter.value.min = minValue;
+            if (maxValue !== undefined) filter.value.max = maxValue;
           }
 
           statFilters.push(filter);

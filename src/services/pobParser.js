@@ -136,7 +136,14 @@ export const parsePoB = async (code) => {
     const lines = itemText.split('\n').map(l => l.trim()).filter(l => l);
     if (lines.length < 1) return;
 
-    // Debug logging for charms
+    // Debug logging for flasks
+    if (process.env.NODE_ENV === 'development' &&
+        (itemText.toLowerCase().includes('flask') || itemText.toLowerCase().includes('penetrating'))) {
+      console.log('=== FLASK DEBUG ===');
+      console.log('Raw itemText:', itemText);
+      console.log('Lines:', lines);
+    }
+
     // Detectar rareza
     let rarity = 'normal';
     let nameLineIdx = 0;
@@ -161,21 +168,43 @@ export const parsePoB = async (code) => {
     let name = lines[nameLineIdx] || lines[0];
     let baseType = lines[nameLineIdx + 1] || lines[1] || name;
 
+    // Debug: log name extraction for flasks
+    if (process.env.NODE_ENV === 'development' &&
+        (itemText.toLowerCase().includes('flask') || itemText.toLowerCase().includes('penetrating'))) {
+      console.log('=== FLASK NAME DEBUG ===');
+      console.log('nameLineIdx:', nameLineIdx);
+      console.log('name (initial):', name);
+      console.log('baseType (initial):', baseType);
+      console.log('rarity:', rarity);
+    }
+
     // Fix for magic/rare items where baseType might be "Unique ID:" instead of actual base
-    // This happens with charms and other items that don't have a separate basetype line
+    // This happens with charms, flasks and other items that don't have a separate basetype line
     if (baseType.startsWith('Unique ID:') || baseType.startsWith('Item Level:') || baseType.startsWith('Quality:')) {
-      // For magic items with prefix/suffix (e.g., "Aqueous Golden Charm of the Eternal")
+      // For magic items with prefix/suffix (e.g., "Dabbler's Quicksilver Flask of Penetrating")
       // Extract the base type from the name
-      if (rarity === 'magic') {
-        // Try to extract base from magic item name
-        // Pattern: "Prefix BaseType of Suffix" or just "Prefix BaseType"
-        const charmMatch = name.match(/(Golden Charm|Silver Charm|Thawing Charm|Iron Charm|Jade Charm|Amber Charm|Cobalt Charm|Crimson Charm|Viridian Charm)/i);
-        if (charmMatch) {
-          baseType = charmMatch[1];
+      if (rarity === 'magic' || rarity === 'rare') {
+        // Try to extract flask base from magic/rare item name
+        // Pattern: "Prefix's BaseType Flask of Suffix" or "Prefix BaseType Flask"
+        const flaskMatch = name.match(/(Quicksilver Flask|Diamond Flask|Jade Flask|Quartz Flask|Granite Flask|Ruby Flask|Sapphire Flask|Topaz Flask|Amethyst Flask|Bismuth Flask|Aquamarine Flask|Stibnite Flask|Sulphur Flask|Basalt Flask|Silver Flask|Gold Flask|Corundum Flask|Iron Flask|Hallowed Life Flask|Sanctified Life Flask|Divine Life Flask|Eternal Life Flask|Hallowed Mana Flask|Sanctified Mana Flask|Divine Mana Flask|Eternal Mana Flask|Colossal Life Flask|Sacred Life Flask|Large Hybrid Flask|Medium Hybrid Flask|Small Hybrid Flask|Utility Flask)/i);
+        if (flaskMatch) {
+          baseType = flaskMatch[1];
         } else {
-          // Generic fallback: take last 2-3 words as base
-          const words = name.split(' ');
-          baseType = words.length >= 2 ? words.slice(-2).join(' ') : name;
+          // Try to extract charm base from magic item name
+          const charmMatch = name.match(/(Golden Charm|Silver Charm|Thawing Charm|Iron Charm|Jade Charm|Amber Charm|Cobalt Charm|Crimson Charm|Viridian Charm)/i);
+          if (charmMatch) {
+            baseType = charmMatch[1];
+          } else {
+            // Generic fallback: try to find "X Flask" or "X Charm" pattern
+            const genericMatch = name.match(/(\w+\s+Flask|\w+\s+Charm)/i);
+            if (genericMatch) {
+              baseType = genericMatch[1];
+            } else {
+              // Last resort: take last 2-3 words as base
+              const words = name.split(' ');
+              baseType = words.length >= 2 ? words.slice(-2).join(' ') : name;
+            }
+          }
         }
       } else {
         // For other rarities, use the name as baseType
@@ -312,10 +341,15 @@ export const parsePoB = async (code) => {
     // Obtener slot
     const slotAttr = itemEl.getAttribute('id');
 
+    // Para items mágicos/raros, guardar el nombre completo para mostrar
+    // pero usar baseType para búsquedas de trade
+    const displayName = (rarity === 'unique' || rarity === 'relic') ? name :
+                        (rarity === 'magic' || rarity === 'rare') ? name : baseType;
+
     parsedItems.push({
       id: index,
       rarity,
-      name: rarity === 'unique' ? name : baseType,
+      name: displayName,
       baseType,
       implicitMods,
       enchantMods,
