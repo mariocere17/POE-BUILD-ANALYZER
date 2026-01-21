@@ -55,7 +55,16 @@ module.exports = async (req, res) => {
 
   // Para PoE1, usar poe.ninja
   if (game === 'poe1') {
-    const poeNinjaUrl = `https://poe.ninja/poe1/api/economy/stash/current/currency/overview?league=${encodeURIComponent(league)}&type=Currency`;
+    // poe.ninja usa nombres cortos para las ligas de PoE1
+    // Mapear nombres completos a nombres cortos
+    const POE1_LEAGUE_MAPPING = {
+      'Keepers of the Flame': 'Keepers',
+      'Hardcore Keepers of the Flame': 'Hardcore Keepers',
+      // Agregar más mapeos según sea necesario
+    };
+
+    const ninjaLeague = POE1_LEAGUE_MAPPING[league] || league;
+    const poeNinjaUrl = `https://poe.ninja/poe1/api/economy/stash/current/currency/overview?league=${encodeURIComponent(ninjaLeague)}&type=Currency`;
 
     try {
       const { response, buffer } = await fetchWithRedirect(poeNinjaUrl);

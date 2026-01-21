@@ -56,9 +56,19 @@ module.exports = async (req, res) => {
   const league = req.query.league || 'vaal';
   const game = req.query.game || 'poe2';
 
+  // poe.ninja usa nombres cortos para las ligas de PoE1
+  const POE1_LEAGUE_MAPPING = {
+    'Keepers of the Flame': 'Keepers',
+    'Hardcore Keepers of the Flame': 'Hardcore Keepers',
+  };
+
+  const ninjaLeague = (game === 'poe1' && POE1_LEAGUE_MAPPING[league])
+    ? POE1_LEAGUE_MAPPING[league]
+    : league;
+
   const url = game === 'poe2'
-    ? `https://poe.ninja/api/data/poe2/currencyoverview?league=${encodeURIComponent(league)}&type=Currency`
-    : `https://poe.ninja/poe1/api/economy/stash/current/currency/overview?league=${encodeURIComponent(league)}&type=Currency`;
+    ? `https://poe.ninja/api/data/poe2/currencyoverview?league=${encodeURIComponent(ninjaLeague)}&type=Currency`
+    : `https://poe.ninja/poe1/api/economy/stash/current/currency/overview?league=${encodeURIComponent(ninjaLeague)}&type=Currency`;
 
   try {
     const { response, buffer } = await fetchWithRedirect(url);
