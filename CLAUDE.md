@@ -691,3 +691,36 @@ const url = await generateTradeURL(item, game, league, sellerStatusRef.current, 
 ### Default Value
 
 Changed default from `any` to `securable` (Instant Buyout) as it's the most useful for most users.
+
+---
+
+## Session Work (2026-01-22) - Critical Damage Bonus Stat Mapping
+
+### Problem
+
+The mod `#% increased Critical Damage Bonus` was not being found in trade searches, showing as "NOT FOUND" in logs.
+
+### Root Cause
+
+GGG's stats API endpoint (`/api/trade/data/stats?realm=poe2`) returns this stat with PoE1 terminology:
+- **API returns:** `+#% to Global Critical Strike Multiplier`
+- **Items show:** `#% increased Critical Damage Bonus`
+
+The stat ID (`explicit.stat_3556824919`) is correct, but the text description in the API is outdated/incorrect for PoE2.
+
+### Solution
+
+Added direct mapping in `DIRECT_STAT_MAPPINGS`:
+```javascript
+'#% increased Critical Damage Bonus': 'explicit.stat_3556824919',
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/statsAPI.js` | Added Critical Damage Bonus to DIRECT_STAT_MAPPINGS |
+
+### Note
+
+This is a GGG API inconsistency - the stats endpoint uses PoE1 terminology ("Critical Strike Multiplier") while PoE2 items use "Critical Damage Bonus". The stat ID is the same for both.

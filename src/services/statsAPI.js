@@ -100,6 +100,8 @@ const DIRECT_STAT_MAPPINGS = {
   // Basic Critical Hit/Strike Chance uses Global stat ID in PoE2 for jewels
   '#% increased Critical Hit Chance': 'explicit.stat_587431675',
   '#% increased Critical Strike Chance': 'explicit.stat_587431675',
+  // Critical Damage Bonus (PoE2) - API shows as "Global Critical Strike Multiplier" but items show "Critical Damage Bonus"
+  '#% increased Critical Damage Bonus': 'explicit.stat_3556824919',
   // Essence of Horror mod - not in stats API but exists in trade
   '#% increased effect of Socketed Items': 'explicit.stat_2081918629',
   // Spirit stat - PoE2 specific, not in stats API
