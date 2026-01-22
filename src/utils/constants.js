@@ -53,10 +53,18 @@ export const JEWEL_TYPES = ['Sapphire', 'Diamond', 'Ruby', 'Emerald', 'Topaz', '
 
 export const RARITY_OPTIONS = ['normal', 'magic', 'rare', 'unique'];
 
-export const SELLER_STATUS_OPTIONS = [
-  { value: 'any', label: 'Any' },
-  { value: 'online', label: 'Instant Buyout' }
+// Trade mode options for PoE2
+// Values: available, securable, online, any
+// Reference: https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2/pull/1306
+export const TRADE_MODE_OPTIONS = [
+  { value: 'securable', labelKey: 'tradeMode.instantBuyout' },
+  { value: 'available', labelKey: 'tradeMode.instantAndInPerson' },
+  { value: 'online', labelKey: 'tradeMode.inPersonOnly' },
+  { value: 'any', labelKey: 'tradeMode.any' }
 ];
+
+// Legacy alias for backwards compatibility
+export const SELLER_STATUS_OPTIONS = TRADE_MODE_OPTIONS;
 
 export const TRADE_BASE_URLS = {
   poe2: 'https://www.pathofexile.com/trade2/search/poe2',

@@ -20,10 +20,14 @@ export const useBuildAnalyzer = () => {
   const [game, setGame] = useState('poe2');
   const [league, setLeague] = useState(LEAGUES.poe2[0].value);
   const [copiedIndex, setCopiedIndex] = useState(null);
-  const [sellerStatus, setSellerStatus] = useState('any');
+  const [sellerStatus, setSellerStatus] = useState('securable'); // Default to Instant Buyout
 
   // Use ref for stat cache to avoid re-creating callbacks when cache updates
   const statCacheRef = useRef(null);
+
+  // Use ref for sellerStatus to always get current value in callbacks
+  const sellerStatusRef = useRef(sellerStatus);
+  sellerStatusRef.current = sellerStatus;
 
   const handleFetchStats = useCallback(async (currentGame) => {
     const stats = await fetchStatIds(currentGame, statCacheRef.current);
@@ -52,16 +56,18 @@ export const useBuildAnalyzer = () => {
 
   const handleCopyToClipboard = useCallback(async (item, index) => {
     const stats = await handleFetchStats(game);
-    const url = await generateTradeURL(item, game, league, sellerStatus, stats);
+    // Use ref to get current sellerStatus value
+    const url = await generateTradeURL(item, game, league, sellerStatusRef.current, stats);
     navigator.clipboard.writeText(url);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
-  }, [game, league, sellerStatus, handleFetchStats]);
+  }, [game, league, handleFetchStats]);
 
   const handleOpenTradeURL = useCallback(async (item) => {
     try {
       const stats = await handleFetchStats(game);
-      const url = await generateTradeURL(item, game, league, sellerStatus, stats);
+      // Use ref to get current sellerStatus value
+      const url = await generateTradeURL(item, game, league, sellerStatusRef.current, stats);
       // Sanitizar URL antes de abrir en nueva ventana
       const safeUrl = sanitizeTradeURL(url);
       window.open(safeUrl, '_blank', 'noopener,noreferrer');
@@ -69,7 +75,7 @@ export const useBuildAnalyzer = () => {
       console.error('Error opening trade URL:', err);
       setError('Failed to open trade URL. Please try again.');
     }
-  }, [game, league, sellerStatus, handleFetchStats]);
+  }, [game, league, handleFetchStats]);
 
   const handleSaveItem = useCallback((editedItem) => {
     setItems(prevItems => prevItems.map(i => i.id === editedItem.id ? editedItem : i));

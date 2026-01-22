@@ -107,7 +107,7 @@ const ItemList = ({
               className="bg-slate-800 border-2 border-slate-700 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all"
             >
               {SELLER_STATUS_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>{option.label}</option>
+                <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
               ))}
             </select>
           </div>

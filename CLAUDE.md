@@ -642,3 +642,52 @@ Previous session marked several The Vertex mods as unsearchable. User provided t
 | File | Changes |
 |------|---------|
 | `src/services/statsAPI.js` | Added The Vertex stat mappings to DIRECT_STAT_MAPPINGS, removed false positives from UNSEARCHABLE_MODS |
+
+---
+
+## Session Work (2026-01-22) - Trade Mode Selector Fix
+
+### Problem
+
+The "Status" dropdown selector was using incorrect values for PoE2 trade API:
+- Old `online` value was labeled "Instant Buyout" but actually meant "In Person Trade Only"
+- Trade mode wasn't updating when selector changed (stale closure in useCallback)
+
+### Solution
+
+#### 1. Correct Trade Mode Values (from PoB-PoE2 PR #1306)
+
+| UI Label | API Value | Description |
+|----------|-----------|-------------|
+| Instant Buyout | `securable` | Items with instant buyout only |
+| Instant Buyout & In Person | `available` | Both instant and in-person trade |
+| In Person Only | `online` | Traditional trade only |
+| Any | `any` | All listings |
+
+Reference: https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2/pull/1306
+
+#### 2. Fixed Stale Closure Bug
+
+Used `useRef` for `sellerStatus` to ensure callbacks always use current value:
+
+```javascript
+// In useBuildAnalyzer.js
+const sellerStatusRef = useRef(sellerStatus);
+sellerStatusRef.current = sellerStatus;
+
+// In callbacks, use ref instead of state directly
+const url = await generateTradeURL(item, game, league, sellerStatusRef.current, stats);
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/utils/constants.js` | New `TRADE_MODE_OPTIONS` with correct values and translation keys |
+| `src/i18n/translations.js` | Added `tradeMode` translations (EN/ES) |
+| `src/components/BuildAnalyzer/ItemList.jsx` | Updated to use translation keys |
+| `src/hooks/useBuildAnalyzer.js` | Added `sellerStatusRef` to fix stale closure, default to `securable` |
+
+### Default Value
+
+Changed default from `any` to `securable` (Instant Buyout) as it's the most useful for most users.

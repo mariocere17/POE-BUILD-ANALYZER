@@ -179,6 +179,14 @@ Examples:
       english: 'English',
       spanish: 'Español',
       changeLanguage: 'Change Language'
+    },
+
+    // Trade Mode Options
+    tradeMode: {
+      instantBuyout: 'Instant Buyout',
+      instantAndInPerson: 'Instant Buyout & In Person',
+      inPersonOnly: 'In Person Only',
+      any: 'Any'
     }
   },
 
@@ -361,6 +369,14 @@ Ejemplos:
       english: 'English',
       spanish: 'Español',
       changeLanguage: 'Cambiar Idioma'
+    },
+
+    // Trade Mode Options
+    tradeMode: {
+      instantBuyout: 'Compra Instantánea',
+      instantAndInPerson: 'Instantánea y En Persona',
+      inPersonOnly: 'Solo En Persona',
+      any: 'Cualquiera'
     }
   }
 };
