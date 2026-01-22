@@ -26,6 +26,11 @@ const STAT_ALIASES = [
   // PoB uses "maximum Mana/Life" but API uses just "Mana/Life"
   { from: /of maximum Mana/gi, to: 'of Mana' },
   { from: /of maximum Life/gi, to: 'of Life' },
+  // PoE2: Local defence stats need "(Local)" suffix for trade API
+  { from: /^#% increased Energy Shield$/i, to: '#% increased Energy Shield (Local)' },
+  { from: /^#% increased Armour$/i, to: '#% increased Armour (Local)' },
+  { from: /^#% increased Evasion$/i, to: '#% increased Evasion (Local)' },
+  { from: /^#% increased Evasion Rating$/i, to: '#% increased Evasion Rating (Local)' },
 ];
 
 /**
@@ -40,6 +45,21 @@ const UNSEARCHABLE_MODS = [
   'Used when you use a Skill',
   'Used when you take a Savage Hit',
   'Reused at the end of this Flask\'s Effect',
+  // Charm trigger implicits (PoE2) - not in stats API
+  'Used when you kill a Rare or Unique enemy',
+  'Used when you become Frozen',
+  'Used when you become Chilled',
+  'Used when you become Shocked',
+  'Used when you become Ignited',
+  'Used when you become Poisoned',
+  'Used when you start Bleeding',
+  // Charm mods (PoE2) - not in stats API
+  'Recover # Mana when Used',
+  'Recover # Life when Used',
+  'Recover # Energy Shield when Used',
+  '#% increased Charges gained', // Charm-specific, API only has "Flask Charges gained"
+  '#% Chance to gain a Charge when you kill an enemy', // Charm-specific, API only has specific charge types
+  'Energy Shield Recharge starts on use', // Charm-specific, stat exists but doesn't work for charms in trade
 ];
 
 /**
@@ -50,6 +70,7 @@ const UNSEARCHABLE_MODS = [
 const REDUCED_TO_INCREASED_MODS = [
   { pattern: /^#% reduced Duration$/i, replacement: '#% increased Duration' },
   { pattern: /^#% reduced effect$/i, replacement: '#% increased effect' },
+  { pattern: /^#% reduced Amount Recovered$/i, replacement: '#% increased Amount Recovered' },
 ];
 
 /**
