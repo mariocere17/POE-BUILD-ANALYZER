@@ -1,11 +1,10 @@
 const https = require('https');
 const zlib = require('zlib');
+const { setCorsHeaders, isValidLeague, safeDecompress, createErrorResponse } = require('../utils/security');
 
 module.exports = async (req, res) => {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Access-Control-Max-Age', '86400');
+  // CORS headers with whitelist
+  setCorsHeaders(req, res, ['GET']);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -17,6 +16,11 @@ module.exports = async (req, res) => {
 
   const league = req.query.league || 'Fate of the Vaal';
   const categories = req.query.categories;
+
+  // Validate league parameter
+  if (!isValidLeague(league, 'poe2')) {
+    return res.status(400).json({ error: 'Invalid league parameter' });
+  }
 
   if (!categories) {
     return res.status(400).json({
@@ -53,18 +57,10 @@ module.exports = async (req, res) => {
           response.on('end', () => {
             try {
               const buffer = Buffer.concat(chunks);
-              let data;
 
+              // Safe decompression with size limits
               const encoding = response.headers['content-encoding'];
-              if (encoding === 'gzip') {
-                data = zlib.gunzipSync(buffer).toString();
-              } else if (encoding === 'deflate') {
-                data = zlib.inflateSync(buffer).toString();
-              } else if (encoding === 'br') {
-                data = zlib.brotliDecompressSync(buffer).toString();
-              } else {
-                data = buffer.toString();
-              }
+              const data = safeDecompress(buffer, encoding, zlib);
 
               const json = JSON.parse(data);
               resolve({ category, data: json });
@@ -105,9 +101,6 @@ module.exports = async (req, res) => {
     });
   } catch (error) {
     console.error('Multi-category fetch error:', error);
-    res.status(500).json({
-      error: 'Failed to fetch multi-category data',
-      details: error.message
-    });
+    res.status(500).json(createErrorResponse('Failed to fetch multi-category data', error));
   }
 };

@@ -117,7 +117,8 @@ const tokenizeAndNormalize = (text) => {
   let normalized = text
     .toLowerCase()
     .replace(/#/g, ' ')
-    .replace(/[+-]?\d+(\.\d+)?%?/g, ' ')
+    // eslint-disable-next-line security/detect-unsafe-regex
+    .replace(/[+-]?\d+(?:\.\d+)?%?/g, ' ')
     .replace(/[^a-z\s]/g, ' ')
     .trim();
 
@@ -459,7 +460,8 @@ const findStatIdExact = (stats, normalizedMod, modType) => {
 
       for (const entry of category.entries || []) {
         let entryText = entry.text
-          .replace(/[+-]?\d+(\.\d+)?/g, '#')
+          // eslint-disable-next-line security/detect-unsafe-regex
+          .replace(/[+-]?\d+(?:\.\d+)?/g, '#')
           .replace(/#%/g, '#%')
           .replace(/\+/g, '')
           .trim();

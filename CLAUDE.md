@@ -325,3 +325,171 @@ const FUZZY_MIN_SCORE = 0.80; // Higher = stricter (default 0.75)
 
 ### Disable Reduced→Increased Transformation
 Remove or comment out entries in `REDUCED_TO_INCREASED_MODS` array.
+
+---
+
+## Session Work (2026-01-22) - Security Hardening
+
+### Security Audit & Fixes
+
+Performed comprehensive security audit using `npm audit` and `eslint-plugin-security`. Implemented fixes for 6 high-priority vulnerabilities.
+
+#### 1. CORS Whitelist (was: wildcard `*`)
+**Problem:** All API endpoints used `Access-Control-Allow-Origin: *` allowing any site to call the API.
+
+**Solution:** Created centralized security module with origin whitelist:
+```javascript
+// api/utils/security.js
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://poe-build-analyzer.vercel.app',
+  /^https:\/\/poe-build-analyzer.*\.vercel\.app$/,
+];
+```
+
+#### 2. League Parameter Validation
+**Problem:** `league` parameter was not validated, allowing potential injection.
+
+**Solution:** Whitelist validation for all league parameters:
+```javascript
+const VALID_LEAGUES = {
+  poe2: ['Fate of the Vaal', 'HC Fate of the Vaal', 'Standard', ...],
+  poe1: ['Keepers of the Flame', 'Hardcore Keepers of the Flame', 'Standard', ...],
+};
+```
+
+#### 3. Zip Bomb Prevention
+**Problem:** `pako.inflate()` and `zlib` decompression had no size limits.
+
+**Solution:** `safeDecompress()` function with limits:
+```javascript
+const MAX_COMPRESSED_SIZE = 10 * 1024 * 1024;   // 10MB input
+const MAX_DECOMPRESSED_SIZE = 50 * 1024 * 1024; // 50MB output
+```
+
+#### 4. Error Message Sanitization
+**Problem:** Error responses exposed internal details (`error.message`) in production.
+
+**Solution:** `createErrorResponse()` hides details in production:
+```javascript
+function createErrorResponse(message, error = null) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const response = { error: message };
+  if (!isProduction && error) {
+    response.details = error.message;
+  }
+  return response;
+}
+```
+
+#### 5. IP Spoofing Prevention
+**Problem:** Rate limiting used easily-spoofed `x-forwarded-for` header.
+
+**Solution:** Priority-based IP detection with Vercel verification:
+```javascript
+function getClientIp(req) {
+  // Vercel's verified IP (most trustworthy)
+  const vercelIp = req.headers['x-vercel-forwarded-for'];
+  if (vercelIp) return vercelIp.split(',')[0].trim();
+  // Fallbacks...
+}
+```
+
+#### 6. Image Magic Bytes Validation
+**Problem:** Screenshot uploads only validated MIME type (client-provided, spoofable).
+
+**Solution:** Server-side magic bytes validation:
+```javascript
+function isValidImageMagicBytes(buffer) {
+  // Validates PNG, JPEG, GIF, WebP signatures
+  const png = [0x89, 0x50, 0x4E, 0x47];
+  const jpeg = [0xFF, 0xD8, 0xFF];
+  // ...
+}
+```
+
+### Files Created/Modified
+
+| File | Changes |
+|------|---------|
+| `api/utils/security.js` | **NEW** - Centralized security utilities module |
+| `api/stats.js` | CORS whitelist, safe decompression, error sanitization |
+| `api/pob/fetch.js` | CORS whitelist, safe decompression, error sanitization |
+| `api/poeninja/currency.js` | CORS whitelist, league validation, safe decompression |
+| `api/poe2scout/currency.js` | CORS whitelist, league validation, safe decompression |
+| `api/poe2scout/items-multi.js` | CORS whitelist, league validation, safe decompression |
+| `api/leagues.js` | CORS whitelist, game validation, safe decompression |
+| `api/report-bug.js` | Improved IP detection, magic bytes validation |
+| `package.json` | Added eslint-plugin-security config, lint scripts |
+
+### Security Module API (`api/utils/security.js`)
+
+```javascript
+// CORS
+setCorsHeaders(req, res, methods)  // Set CORS with whitelist
+getAllowedOrigin(origin)           // Check if origin is allowed
+
+// Validation
+isValidLeague(league, game)        // Validate league against whitelist
+isValidGame(game)                  // Validate game parameter
+isValidRealm(realm)                // Validate realm parameter
+
+// Rate Limiting
+getClientIp(req)                   // Get verified client IP
+
+// Error Handling
+createErrorResponse(msg, error)   // Safe error response
+
+// Decompression
+safeDecompress(buffer, encoding, zlib)  // Size-limited decompression
+isBufferSizeSafe(buffer)          // Check compressed size
+isDecompressedSizeSafe(data)      // Check decompressed size
+
+// File Validation
+isValidImageMagicBytes(buffer)    // Validate image file signatures
+```
+
+### New NPM Scripts
+
+```bash
+npm run lint           # ESLint on src/ and api/
+npm run lint:security  # Security-focused linting
+```
+
+### ESLint Security Rules Added
+
+```json
+{
+  "plugins": ["security"],
+  "rules": {
+    "security/detect-object-injection": "warn",
+    "security/detect-unsafe-regex": "error",
+    "security/detect-eval-with-expression": "error",
+    "security/detect-buffer-noassert": "error",
+    "security/detect-child-process": "warn",
+    "security/detect-non-literal-fs-filename": "warn"
+  }
+}
+```
+
+### npm audit Status
+
+- ✅ Fixed: lodash Prototype Pollution
+- ⚠️ Remaining: 9 vulnerabilities in react-scripts dependencies (dev-only, no production impact)
+  - nth-check, postcss, webpack-dev-server (all development tools)
+
+### Rollback Instructions
+
+To disable security features:
+
+```javascript
+// Revert to wildcard CORS (not recommended)
+res.setHeader('Access-Control-Allow-Origin', '*');
+
+// Disable league validation
+// Comment out isValidLeague() checks
+
+// Disable decompression limits
+// Use zlib directly instead of safeDecompress()
+```

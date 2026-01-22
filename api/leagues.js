@@ -1,11 +1,10 @@
 const https = require('https');
 const zlib = require('zlib');
+const { setCorsHeaders, isValidGame, safeDecompress } = require('./utils/security');
 
 module.exports = async (req, res) => {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Access-Control-Max-Age', '86400');
+  // CORS headers with whitelist
+  setCorsHeaders(req, res, ['GET']);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -16,6 +15,11 @@ module.exports = async (req, res) => {
   }
 
   const game = req.query.game || 'poe1';
+
+  // Validate game parameter
+  if (!isValidGame(game)) {
+    return res.status(400).json({ error: 'Invalid game parameter' });
+  }
 
   // Ligas hardcodeadas como fallback
   const fallbackLeagues = {
@@ -62,19 +66,10 @@ module.exports = async (req, res) => {
       });
 
       const { buffer } = response;
-      let data;
 
+      // Safe decompression with size limits
       const encoding = response.response.headers['content-encoding'];
-
-      if (encoding === 'gzip') {
-        data = zlib.gunzipSync(buffer).toString();
-      } else if (encoding === 'deflate') {
-        data = zlib.inflateSync(buffer).toString();
-      } else if (encoding === 'br') {
-        data = zlib.brotliDecompressSync(buffer).toString();
-      } else {
-        data = buffer.toString();
-      }
+      const data = safeDecompress(buffer, encoding, zlib);
 
       const json = JSON.parse(data);
 
@@ -124,19 +119,10 @@ module.exports = async (req, res) => {
     });
 
     const { buffer } = response;
-    let data;
 
+    // Safe decompression with size limits
     const encoding = response.response.headers['content-encoding'];
-
-    if (encoding === 'gzip') {
-      data = zlib.gunzipSync(buffer).toString();
-    } else if (encoding === 'deflate') {
-      data = zlib.inflateSync(buffer).toString();
-    } else if (encoding === 'br') {
-      data = zlib.brotliDecompressSync(buffer).toString();
-    } else {
-      data = buffer.toString();
-    }
+    const data = safeDecompress(buffer, encoding, zlib);
 
     const json = JSON.parse(data);
     const leagues = json.result || json;

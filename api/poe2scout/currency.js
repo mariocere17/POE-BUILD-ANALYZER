@@ -1,5 +1,6 @@
 const https = require('https');
 const zlib = require('zlib');
+const { setCorsHeaders, isValidLeague, isValidGame, safeDecompress, createErrorResponse } = require('../utils/security');
 
 // Función para seguir redirects manualmente (para poe.ninja)
 const fetchWithRedirect = (targetUrl, maxRedirects = 5) => {
@@ -37,10 +38,8 @@ const fetchWithRedirect = (targetUrl, maxRedirects = 5) => {
 };
 
 module.exports = async (req, res) => {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Access-Control-Max-Age', '86400');
+  // CORS headers with whitelist
+  setCorsHeaders(req, res, ['GET']);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -52,6 +51,15 @@ module.exports = async (req, res) => {
 
   const league = req.query.league || 'Fate of the Vaal';
   const game = req.query.game || 'poe2';
+
+  // Validate parameters
+  if (!isValidGame(game)) {
+    return res.status(400).json({ error: 'Invalid game parameter' });
+  }
+
+  if (!isValidLeague(league, game)) {
+    return res.status(400).json({ error: 'Invalid league parameter' });
+  }
 
   // Para PoE1, usar poe.ninja
   if (game === 'poe1') {
@@ -69,18 +77,9 @@ module.exports = async (req, res) => {
     try {
       const { response, buffer } = await fetchWithRedirect(poeNinjaUrl);
 
-      let data;
+      // Safe decompression with size limits
       const encoding = response.headers['content-encoding'];
-
-      if (encoding === 'gzip') {
-        data = zlib.gunzipSync(buffer).toString();
-      } else if (encoding === 'deflate') {
-        data = zlib.inflateSync(buffer).toString();
-      } else if (encoding === 'br') {
-        data = zlib.brotliDecompressSync(buffer).toString();
-      } else {
-        data = buffer.toString();
-      }
+      const data = safeDecompress(buffer, encoding, zlib);
 
       const json = JSON.parse(data);
 
@@ -96,7 +95,7 @@ module.exports = async (req, res) => {
 
       return res.status(200).json(transformedData);
     } catch (error) {
-      return res.status(500).json({ error: 'Failed to fetch poe.ninja data', details: error.message });
+      return res.status(500).json(createErrorResponse('Failed to fetch poe.ninja data', error));
     }
   }
 
@@ -130,23 +129,14 @@ module.exports = async (req, res) => {
     });
 
     const { buffer } = response;
-    let data;
 
+    // Safe decompression with size limits
     const encoding = response.response.headers['content-encoding'];
-
-    if (encoding === 'gzip') {
-      data = zlib.gunzipSync(buffer).toString();
-    } else if (encoding === 'deflate') {
-      data = zlib.inflateSync(buffer).toString();
-    } else if (encoding === 'br') {
-      data = zlib.brotliDecompressSync(buffer).toString();
-    } else {
-      data = buffer.toString();
-    }
+    const data = safeDecompress(buffer, encoding, zlib);
 
     const json = JSON.parse(data);
     res.status(200).json(json);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch poe2scout data', details: error.message });
+    res.status(500).json(createErrorResponse('Failed to fetch poe2scout data', error));
   }
 };

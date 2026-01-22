@@ -1,11 +1,10 @@
 const https = require('https');
 const zlib = require('zlib');
+const { setCorsHeaders, safeDecompress, createErrorResponse } = require('../utils/security');
 
 module.exports = async (req, res) => {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Access-Control-Max-Age', '86400');
+  // CORS headers with whitelist
+  setCorsHeaders(req, res, ['GET']);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -82,20 +81,10 @@ module.exports = async (req, res) => {
     });
 
     const { buffer } = response;
-    let data;
 
-    // Descomprimir si es necesario
+    // Safe decompression with size limits
     const encoding = response.response.headers['content-encoding'];
-
-    if (encoding === 'gzip') {
-      data = zlib.gunzipSync(buffer).toString();
-    } else if (encoding === 'deflate') {
-      data = zlib.inflateSync(buffer).toString();
-    } else if (encoding === 'br') {
-      data = zlib.brotliDecompressSync(buffer).toString();
-    } else {
-      data = buffer.toString();
-    }
+    const data = safeDecompress(buffer, encoding, zlib);
 
     // Retornar el código raw
     res.status(200).json({
@@ -104,9 +93,6 @@ module.exports = async (req, res) => {
       source: url
     });
   } catch (error) {
-    res.status(500).json({
-      error: 'Failed to fetch PoB code',
-      details: error.message
-    });
+    res.status(500).json(createErrorResponse('Failed to fetch PoB code', error));
   }
 };

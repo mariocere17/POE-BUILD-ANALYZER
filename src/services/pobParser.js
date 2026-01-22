@@ -300,12 +300,14 @@ export const parsePoB = async (code) => {
 
         // Normalizar el mod: reemplazar números con #
         const normalizedMod = cleanLine
-          .replace(/\+?-?\d+(\.\d+)?/g, '#')
+          // eslint-disable-next-line security/detect-unsafe-regex
+          .replace(/[+-]?\d+(?:\.\d+)?/g, '#')
           .replace(/#%/g, '#%')
           .replace(/# to #/g, '# to #');
 
         // Extraer el valor original
-        const valueMatch = cleanLine.match(/\+?-?(\d+(\.\d+)?)/);
+        // eslint-disable-next-line security/detect-unsafe-regex
+        const valueMatch = cleanLine.match(/[+-]?(\d+(?:\.\d+)?)/);
         const originalValue = valueMatch ? parseFloat(valueMatch[1]) : null;
 
         const modData = {

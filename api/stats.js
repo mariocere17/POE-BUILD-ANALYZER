@@ -1,11 +1,10 @@
 const https = require('https');
 const zlib = require('zlib');
+const { setCorsHeaders, isValidRealm, safeDecompress, createErrorResponse } = require('./utils/security');
 
 module.exports = async (req, res) => {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Access-Control-Max-Age', '86400');
+  // CORS headers with whitelist
+  setCorsHeaders(req, res, ['GET']);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -18,7 +17,7 @@ module.exports = async (req, res) => {
   const realm = req.query.realm || 'poe2';
 
   // Validar realm parameter
-  if (!['poe1', 'poe2', 'pc'].includes(realm)) {
+  if (!isValidRealm(realm)) {
     return res.status(400).json({ error: 'Invalid realm parameter' });
   }
 
@@ -60,25 +59,16 @@ module.exports = async (req, res) => {
         }
 
         const buffer = Buffer.concat(chunks);
-        let data;
 
-        // Descomprimir si es necesario
+        // Safe decompression with size limits
         const encoding = response.headers['content-encoding'];
-        if (encoding === 'gzip') {
-          data = zlib.gunzipSync(buffer).toString();
-        } else if (encoding === 'deflate') {
-          data = zlib.inflateSync(buffer).toString();
-        } else if (encoding === 'br') {
-          data = zlib.brotliDecompressSync(buffer).toString();
-        } else {
-          data = buffer.toString();
-        }
+        const data = safeDecompress(buffer, encoding, zlib);
 
         const json = JSON.parse(data);
         res.status(200).json(json);
       } catch (error) {
         console.error('Parse error:', error);
-        res.status(500).json({ error: 'Parse error', details: error.message });
+        res.status(500).json(createErrorResponse('Parse error', error));
       }
     });
   }).on('error', (error) => {

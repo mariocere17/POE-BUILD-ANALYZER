@@ -7,6 +7,7 @@ const formidable = require('formidable');
 const fs = require('fs').promises;
 const FormData = require('form-data');
 const fetch = require('node-fetch');
+const { getClientIp, isValidImageMagicBytes } = require('./utils/security');
 
 // In-memory store for rate limiting (resets when function cold-starts)
 const rateLimitStore = new Map();
@@ -184,8 +185,8 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'Report system not configured' });
     }
 
-    // Get IP for rate limiting
-    const ip = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
+    // Get IP for rate limiting (using verified Vercel header when available)
+    const ip = getClientIp(req);
 
     // Check rate limit
     if (!checkRateLimit(ip)) {
@@ -225,6 +226,21 @@ module.exports = async function handler(req, res) {
       if (screenshot.size > 5 * 1024 * 1024) {
         return res.status(400).json({
           error: 'Screenshot must be smaller than 5MB'
+        });
+      }
+
+      // Validate magic bytes (server-side file type verification)
+      try {
+        const fileBuffer = await fs.readFile(screenshot.filepath);
+        if (!isValidImageMagicBytes(fileBuffer)) {
+          return res.status(400).json({
+            error: 'Invalid image file format'
+          });
+        }
+      } catch (readError) {
+        console.error('Error reading screenshot for validation:', readError);
+        return res.status(400).json({
+          error: 'Failed to validate screenshot'
         });
       }
     }
