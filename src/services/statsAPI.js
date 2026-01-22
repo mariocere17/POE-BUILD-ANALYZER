@@ -31,6 +31,8 @@ const STAT_ALIASES = [
   { from: /^#% increased Armour$/i, to: '#% increased Armour (Local)' },
   { from: /^#% increased Evasion$/i, to: '#% increased Evasion (Local)' },
   { from: /^#% increased Evasion Rating$/i, to: '#% increased Evasion Rating (Local)' },
+  // PoE2: Mutated mods - PoB uses "Skills" but API uses "Skill Gems"
+  { from: /^# to Level of all Skills$/i, to: '+# to Level of all Skill Gems' },
 ];
 
 /**
@@ -60,6 +62,9 @@ const UNSEARCHABLE_MODS = [
   '#% increased Charges gained', // Charm-specific, API only has "Flask Charges gained"
   '#% Chance to gain a Charge when you kill an enemy', // Charm-specific, API only has specific charge types
   'Energy Shield Recharge starts on use', // Charm-specific, stat exists but doesn't work for charms in trade
+  // Unique item mods (PoE2) - different from similar mods in API
+  'Equipment has no Attribute Requirements', // Different from "Has no Attribute Requirements"
+  '#% increased Mana Cost Efficiency', // Unique mod, not in API
 ];
 
 /**

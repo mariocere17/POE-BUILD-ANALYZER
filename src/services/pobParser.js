@@ -293,6 +293,7 @@ export const parsePoB = async (code) => {
           .replace(/\{desecrated\}/g, '')
           .replace(/\{fractured\}/g, '')
           .replace(/\{crafted\}/g, '')
+          .replace(/\{mutated\}/g, '')
           .replace(/\{range:[^}]+\}/g, '')
           .trim();
 
