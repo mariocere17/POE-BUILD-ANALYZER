@@ -63,6 +63,22 @@ const UNSEARCHABLE_MODS = [
 ];
 
 /**
+ * Mods that are unsearchable ONLY when they appear as implicits
+ * These work as explicits but not as corruption implicits in PoE2
+ */
+const UNSEARCHABLE_IMPLICIT_MODS = [
+  // Local defence stats - work as explicits but not as corruption implicits
+  /^#% increased Energy Shield$/i,
+  /^#% increased Armour$/i,
+  /^#% increased Evasion$/i,
+  /^#% increased Evasion Rating$/i,
+  /^#% increased Armour and Energy Shield$/i,
+  /^#% increased Armour and Evasion$/i,
+  /^#% increased Evasion and Energy Shield$/i,
+  /^#% increased Armour, Evasion and Energy Shield$/i,
+];
+
+/**
  * Mods where "reduced X" should be transformed to "increased X" with negative value
  * In PoE, some mods only exist as "increased" and "reduced" is represented as negative values
  * Format: { pattern: regex to match, replacement: string to replace with }
@@ -539,6 +555,14 @@ export const findStatId = (stats, normalizedMod, modType) => {
   if (UNSEARCHABLE_MODS.some(mod => normalizedMod === mod || normalizedMod.includes(mod.replace('#', '')))) {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[STATS] Skipping unsearchable local mod: "${normalizedMod}"`);
+    }
+    return null;
+  }
+
+  // 0b. Check if this is an implicit that's unsearchable (corruption implicits for local defence stats)
+  if (modType === 'implicit' && UNSEARCHABLE_IMPLICIT_MODS.some(pattern => pattern.test(normalizedMod))) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[STATS] Skipping unsearchable implicit mod: "${normalizedMod}"`);
     }
     return null;
   }
