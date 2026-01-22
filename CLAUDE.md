@@ -574,16 +574,7 @@ const UNSEARCHABLE_IMPLICIT_MODS = [
 #### 7. Unique Item Mods Different from API
 **Issue:** Some unique item mods have different wording than API equivalents.
 
-**Solution:** Added to `UNSEARCHABLE_MODS`:
-```javascript
-'Equipment has no Attribute Requirements',  // Different from "Has no Attribute Requirements"
-'#% increased Mana Cost Efficiency',  // Unique mod, not in API
-```
-
-Added to `STAT_ALIASES`:
-```javascript
-{ from: /^# to Level of all Skills$/i, to: '+# to Level of all Skill Gems' },
-```
+**Initial Solution (later corrected):** Initially added to `UNSEARCHABLE_MODS`, but these were later found to BE searchable with correct stat IDs. See "Session Work (2026-01-22) - The Vertex Unique Item Stat Mappings" below for the correct mappings.
 
 ### Updated Stat Lookup Priority
 ```
@@ -614,19 +605,40 @@ Added to `STAT_ALIASES`:
 
 ---
 
-## ⚠️ PENDING ISSUES (Next Session)
+## Session Work (2026-01-22) - The Vertex Unique Item Stat Mappings
 
-The following mods from "The Vertex" unique item are still problematic:
+### Problems Solved
 
-### 1. `+# to Level of all Skills` - ALIAS NOT WORKING
-**Current status:** Alias added but may not be triggering correctly.
+Previous session marked several The Vertex mods as unsearchable. User provided trade search JSON revealing the actual stat IDs.
+
+#### The Vertex Stat Mappings (from trade API response)
+
+| Mod Text | Stat ID |
+|----------|---------|
+| Has no Attribute Requirements | `explicit.stat_2739148464` |
+| #% increased Critical Hit Chance | `explicit.stat_587431675` |
+| Equipment has no Attribute Requirements | `explicit.stat_2480151124` |
+| +# to Level of all Skills | `explicit.stat_4283407333` |
+| #% increased Mana Cost Efficiency | `explicit.stat_4101445926` |
+
+#### Changes Made
+
+1. **Removed from `UNSEARCHABLE_MODS`:**
+   - `Equipment has no Attribute Requirements`
+   - `#% increased Mana Cost Efficiency`
+
+2. **Added to `DIRECT_STAT_MAPPINGS`:**
 ```javascript
-{ from: /^# to Level of all Skills$/i, to: '+# to Level of all Skill Gems' }
+// The Vertex unique item stats (PoE2)
+'Has no Attribute Requirements': 'explicit.stat_2739148464',
+'Equipment has no Attribute Requirements': 'explicit.stat_2480151124',
+'+# to Level of all Skills': 'explicit.stat_4283407333',
+'# to Level of all Skills': 'explicit.stat_4283407333',
+'#% increased Mana Cost Efficiency': 'explicit.stat_4101445926',
 ```
-**Expected:** Should map to `explicit.stat_4283407333` (+# to Level of all Skill Gems)
-**Issue:** The regex might not match because the normalized mod starts with `#` not `+#`. Need to verify the exact normalized form.
 
-### 2. `#% increased Mana Cost Efficiency` - NOT IN API
-**Current status:** Added to UNSEARCHABLE_MODS.
-**Issue:** This is a valuable mod on The Vertex. Need to verify if there's an equivalent stat in the API or if it truly doesn't exist.
-**Possible investigation:** Search API for "Mana Cost" variations, "Cost Efficiency", or check if PoE2 uses different terminology.
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/statsAPI.js` | Added The Vertex stat mappings to DIRECT_STAT_MAPPINGS, removed false positives from UNSEARCHABLE_MODS |

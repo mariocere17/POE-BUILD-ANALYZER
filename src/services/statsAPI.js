@@ -62,9 +62,6 @@ const UNSEARCHABLE_MODS = [
   '#% increased Charges gained', // Charm-specific, API only has "Flask Charges gained"
   '#% Chance to gain a Charge when you kill an enemy', // Charm-specific, API only has specific charge types
   'Energy Shield Recharge starts on use', // Charm-specific, stat exists but doesn't work for charms in trade
-  // Unique item mods (PoE2) - different from similar mods in API
-  'Equipment has no Attribute Requirements', // Different from "Has no Attribute Requirements"
-  '#% increased Mana Cost Efficiency', // Unique mod, not in API
 ];
 
 /**
@@ -121,6 +118,15 @@ const DIRECT_STAT_MAPPINGS = {
   'Notable Passive Skills in Radius also grant #% increased Critical Strike Chance for Spells': 'explicit.stat_2704905000',
   // Small Passive Skills in Radius grants
   'Small Passive Skills in Radius also grant #% increased maximum Energy Shield': 'explicit.stat_3665922113',
+
+  // =========================================================================
+  // The Vertex unique item stats (PoE2)
+  // =========================================================================
+  'Has no Attribute Requirements': 'explicit.stat_2739148464',
+  'Equipment has no Attribute Requirements': 'explicit.stat_2480151124',
+  '+# to Level of all Skills': 'explicit.stat_4283407333',
+  '# to Level of all Skills': 'explicit.stat_4283407333',
+  '#% increased Mana Cost Efficiency': 'explicit.stat_4101445926',
 };
 
 // ============================================================================
