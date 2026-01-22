@@ -493,3 +493,140 @@ res.setHeader('Access-Control-Allow-Origin', '*');
 // Disable decompression limits
 // Use zlib directly instead of safeDecompress()
 ```
+
+---
+
+## Session Work (2026-01-22) - PoE2 Charm & Flask Stat Handling
+
+### Problems Solved
+
+#### 1. Flask "reduced Amount Recovered" Not Found
+**Issue:** `#% reduced Amount Recovered` was not finding the correct stat.
+
+**Solution:** Added to `REDUCED_TO_INCREASED_MODS`:
+```javascript
+{ pattern: /^#% reduced Amount Recovered$/i, replacement: '#% increased Amount Recovered' }
+```
+
+#### 2. Charm Trigger Implicits Not Searchable
+**Issue:** Charm triggers like "Used when you kill a Rare or Unique enemy" were being searched but don't exist in API.
+
+**Solution:** Added charm triggers to `UNSEARCHABLE_MODS`:
+```javascript
+'Used when you kill a Rare or Unique enemy',
+'Used when you become Frozen',
+'Used when you become Chilled',
+'Used when you become Shocked',
+'Used when you become Ignited',
+'Used when you become Poisoned',
+'Used when you start Bleeding',
+```
+
+#### 3. Charm-Specific Mods Not in API
+**Issue:** Several charm mods don't exist in the trade API.
+
+**Solution:** Added to `UNSEARCHABLE_MODS`:
+```javascript
+'Recover # Mana when Used',
+'Recover # Life when Used',
+'Recover # Energy Shield when Used',
+'#% increased Charges gained',  // API only has "Flask Charges gained"
+'#% Chance to gain a Charge when you kill an enemy',  // API only has specific charge types
+'Energy Shield Recharge starts on use',  // Stat exists but doesn't work for charms
+```
+
+#### 4. Corruption Implicit Defence Stats Show as "Unavailable Stat"
+**Issue:** Local defence stats (`#% increased Energy Shield`) work as explicits but NOT as corruption implicits.
+
+**Solution:** Created `UNSEARCHABLE_IMPLICIT_MODS` list:
+```javascript
+const UNSEARCHABLE_IMPLICIT_MODS = [
+  /^#% increased Energy Shield$/i,
+  /^#% increased Armour$/i,
+  /^#% increased Evasion$/i,
+  /^#% increased Evasion Rating$/i,
+  /^#% increased Armour and Energy Shield$/i,
+  /^#% increased Armour and Evasion$/i,
+  /^#% increased Evasion and Energy Shield$/i,
+  /^#% increased Armour, Evasion and Energy Shield$/i,
+];
+```
+
+#### 5. Local Defence Stats Need "(Local)" Suffix
+**Issue:** Explicit defence stats need "(Local)" suffix to match API format.
+
+**Solution:** Added to `STAT_ALIASES`:
+```javascript
+{ from: /^#% increased Energy Shield$/i, to: '#% increased Energy Shield (Local)' },
+{ from: /^#% increased Armour$/i, to: '#% increased Armour (Local)' },
+{ from: /^#% increased Evasion$/i, to: '#% increased Evasion (Local)' },
+{ from: /^#% increased Evasion Rating$/i, to: '#% increased Evasion Rating (Local)' },
+```
+
+#### 6. Mutated Mods Not Cleaned
+**Issue:** `{mutated}` tag was not being removed from mod text, causing search failures.
+
+**Solution:** Added to pobParser.js tag cleaning:
+```javascript
+.replace(/\{mutated\}/g, '')
+```
+
+#### 7. Unique Item Mods Different from API
+**Issue:** Some unique item mods have different wording than API equivalents.
+
+**Solution:** Added to `UNSEARCHABLE_MODS`:
+```javascript
+'Equipment has no Attribute Requirements',  // Different from "Has no Attribute Requirements"
+'#% increased Mana Cost Efficiency',  // Unique mod, not in API
+```
+
+Added to `STAT_ALIASES`:
+```javascript
+{ from: /^# to Level of all Skills$/i, to: '+# to Level of all Skill Gems' },
+```
+
+### Updated Stat Lookup Priority
+```
+0. UNSEARCHABLE_MODS → if match, return null (skip)
+      ↓ not unsearchable
+0b. UNSEARCHABLE_IMPLICIT_MODS → if implicit AND match, return null (skip)
+      ↓ not unsearchable implicit
+1. DIRECT_STAT_MAPPINGS → if found, return immediately
+      ↓ not found
+2. findStatIdExact() → exact match with STAT_ALIASES
+      ↓ not found
+3. findStatIdFuzzy() → token-based fuzzy matching (if enabled)
+      ↓ not found
+4. Return null → stat excluded from search
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/statsAPI.js` | Added UNSEARCHABLE_IMPLICIT_MODS, expanded UNSEARCHABLE_MODS, new STAT_ALIASES, new REDUCED_TO_INCREASED_MODS entry |
+| `src/services/pobParser.js` | Added `{mutated}` tag cleaning |
+
+### Commits
+- `2647ca7` - fix: improve PoE2 charm and flask stat handling
+- `f3ee3ac` - fix: skip unsearchable corruption implicit mods in PoE2
+- `8913bdb` - fix: handle mutated mods and unique item stats in PoE2
+
+---
+
+## ⚠️ PENDING ISSUES (Next Session)
+
+The following mods from "The Vertex" unique item are still problematic:
+
+### 1. `+# to Level of all Skills` - ALIAS NOT WORKING
+**Current status:** Alias added but may not be triggering correctly.
+```javascript
+{ from: /^# to Level of all Skills$/i, to: '+# to Level of all Skill Gems' }
+```
+**Expected:** Should map to `explicit.stat_4283407333` (+# to Level of all Skill Gems)
+**Issue:** The regex might not match because the normalized mod starts with `#` not `+#`. Need to verify the exact normalized form.
+
+### 2. `#% increased Mana Cost Efficiency` - NOT IN API
+**Current status:** Added to UNSEARCHABLE_MODS.
+**Issue:** This is a valuable mod on The Vertex. Need to verify if there's an equivalent stat in the API or if it truly doesn't exist.
+**Possible investigation:** Search API for "Mana Cost" variations, "Cost Efficiency", or check if PoE2 uses different terminology.
