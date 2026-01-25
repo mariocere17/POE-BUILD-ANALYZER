@@ -29,7 +29,7 @@ const UserGuideModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto p-6 space-y-8 flex-1">
+        <div className="overflow-y-auto p-6 space-y-8 flex-1 custom-scrollbar">
 
           {/* Quick Start */}
           <section>

@@ -84,7 +84,7 @@ const BuildForm = ({
         value={pobCode}
         onChange={(e) => setPobCode(e.target.value)}
         placeholder={t('buildForm.pobPlaceholder')}
-        className="w-full h-40 bg-slate-800 border-2 border-slate-700 rounded-lg px-5 py-4 text-white placeholder-slate-500 font-mono text-sm resize-none focus:outline-none focus:border-cyan-500 transition-all"
+        className="w-full h-40 bg-slate-800 border-2 border-slate-700 rounded-lg px-5 py-4 text-white placeholder-slate-500 font-mono text-sm resize-none focus:outline-none focus:border-cyan-500 transition-all custom-scrollbar"
       />
 
       {error && (

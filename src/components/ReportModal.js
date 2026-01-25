@@ -322,7 +322,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div className="bg-gray-900 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700 custom-scrollbar">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-2xl font-bold text-orange-400">{t('reportModal.title')}</h2>
@@ -440,7 +440,7 @@ const ReportModal = ({ isOpen, onClose, gameConfig }) => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={t('reportModal.bugPlaceholder')}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none custom-scrollbar"
                   rows="6"
                   required
                   minLength="10"
