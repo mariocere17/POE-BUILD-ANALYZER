@@ -1,6 +1,6 @@
 // src/components/BuildAnalyzer/EditItemModal.jsx
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { RARITY_OPTIONS } from '../../utils/constants';
 import { useLanguage } from '../../i18n/LanguageContext';
 
@@ -14,6 +14,20 @@ const EditItemModal = ({ item, onClose, onSave }) => {
       fracturedModIndex: item.filters.fracturedModIndex ?? null
     }
   }));
+
+  // Track which sections are expanded (all expanded by default)
+  const [expandedSections, setExpandedSections] = useState({
+    enchants: true,
+    implicits: true,
+    explicits: true
+  });
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   const handleModToggle = (type, index, checked) => {
     const key = type === 'implicit' ? 'selectedImplicits' :
@@ -62,7 +76,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
           </button>
         </div>
 
-        <div className="p-6 space-y-6 overflow-y-auto flex-1 bg-slate-950">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1 bg-slate-950 custom-scrollbar">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-cyan-400 font-semibold mb-2 uppercase tracking-wide">{t('editModal.itemLevel')}</label>
@@ -90,10 +104,19 @@ const EditItemModal = ({ item, onClose, onSave }) => {
 
           {editedItem.enchantMods.length > 0 && (
             <div>
-              <label className="block text-sm text-teal-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-teal-400 pl-3">
-                {t('itemCard.enchants')} ({editedItem.enchantMods.filter((_, i) => editedItem.filters.selectedEnchants[i]).length} {t('editModal.enchantsSelected')})
-              </label>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <button
+                type="button"
+                onClick={() => toggleSection('enchants')}
+                className="w-full flex items-center justify-between text-sm text-teal-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-teal-400 pl-3 pr-2 py-1 hover:bg-slate-800/50 rounded-r transition-colors"
+              >
+                <span>{t('itemCard.enchants')} ({editedItem.enchantMods.filter((_, i) => editedItem.filters.selectedEnchants[i]).length} {t('editModal.enchantsSelected')})</span>
+                <ChevronDown
+                  size={20}
+                  className={`transition-transform duration-200 ${expandedSections.enchants ? '' : '-rotate-90'}`}
+                />
+              </button>
+              {expandedSections.enchants && (
+              <div className="space-y-2">
                 {editedItem.enchantMods.map((mod, i) => (
                   <div key={i} className="flex items-center gap-3 bg-slate-800/60 border-l-2 border-teal-500/50 p-3 rounded hover:bg-slate-800 transition-all">
                     <input
@@ -123,15 +146,25 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           )}
 
           {editedItem.implicitMods.length > 0 && (
             <div>
-              <label className="block text-sm text-emerald-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-emerald-400 pl-3">
-                {t('itemCard.implicitMods')} ({editedItem.implicitMods.filter((_, i) => editedItem.filters.selectedImplicits[i]).length} {t('editModal.implicitsSelected')})
-              </label>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <button
+                type="button"
+                onClick={() => toggleSection('implicits')}
+                className="w-full flex items-center justify-between text-sm text-emerald-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-emerald-400 pl-3 pr-2 py-1 hover:bg-slate-800/50 rounded-r transition-colors"
+              >
+                <span>{t('itemCard.implicitMods')} ({editedItem.implicitMods.filter((_, i) => editedItem.filters.selectedImplicits[i]).length} {t('editModal.implicitsSelected')})</span>
+                <ChevronDown
+                  size={20}
+                  className={`transition-transform duration-200 ${expandedSections.implicits ? '' : '-rotate-90'}`}
+                />
+              </button>
+              {expandedSections.implicits && (
+              <div className="space-y-2">
                 {editedItem.implicitMods.map((mod, i) => (
                   <div key={i} className="flex items-center gap-3 bg-slate-800/60 border-l-2 border-emerald-500/50 p-3 rounded hover:bg-slate-800 transition-all">
                     <input
@@ -161,15 +194,25 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           )}
 
           {editedItem.explicitMods.length > 0 && (
             <div>
-              <label className="block text-sm text-cyan-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-cyan-400 pl-3">
-                {t('itemCard.explicitMods')} ({editedItem.explicitMods.filter((_, i) => editedItem.filters.selectedExplicits[i]).length} {t('editModal.explicitsSelected')})
-              </label>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              <button
+                type="button"
+                onClick={() => toggleSection('explicits')}
+                className="w-full flex items-center justify-between text-sm text-cyan-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-cyan-400 pl-3 pr-2 py-1 hover:bg-slate-800/50 rounded-r transition-colors"
+              >
+                <span>{t('itemCard.explicitMods')} ({editedItem.explicitMods.filter((_, i) => editedItem.filters.selectedExplicits[i]).length} {t('editModal.explicitsSelected')})</span>
+                <ChevronDown
+                  size={20}
+                  className={`transition-transform duration-200 ${expandedSections.explicits ? '' : '-rotate-90'}`}
+                />
+              </button>
+              {expandedSections.explicits && (
+              <div className="space-y-2">
                 {editedItem.explicitMods.map((mod, i) => (
                   <div key={i} className={`flex items-center gap-3 bg-slate-800/60 p-3 rounded hover:bg-slate-800 transition-all ${editedItem.filters.fracturedModIndex === i ? 'border-l-2 border-amber-500' : 'border-l-2 border-cyan-500/50'}`}>
                     <input
@@ -211,6 +254,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           )}
         </div>
