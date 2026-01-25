@@ -114,19 +114,8 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
     };
   }
 
-  // Añadir estado de corrupción
-  if (item.corrupted !== undefined) {
-    query.query.filters.misc_filters.filters.corrupted = {
-      option: item.corrupted ? "true" : "false"
-    };
-  }
-
-  // Fractured: solo filtrar si especificamente hay mods fracturados Y quieres buscarlos
-  if (item.filters.searchFractured) {
-    query.query.filters.misc_filters.filters.fractured_item = {
-      option: "no"
-    };
-  }
+  // Nota: No filtramos por corrupted ni fractured_item por defecto
+  // para que la búsqueda sea más amplia y muestre todos los items
 
   // Añadir mods si tenemos stats disponibles
   if (stats && stats.result) {
