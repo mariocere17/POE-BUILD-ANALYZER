@@ -3,6 +3,47 @@ import { JEWEL_TYPES, TRADE_BASE_URLS } from '../utils/constants';
 import { findStatId, validateStatId, transformReducedMod } from './statsAPI';
 
 /**
+ * Stats that have both global and local versions in PoE2
+ * When searching for these, we use a COUNT group with both versions
+ * so items with either version will be found
+ */
+const STATS_WITH_LOCAL_VARIANTS = {
+  // +# to maximum Energy Shield
+  'explicit.stat_3489782002': {
+    global: 'explicit.stat_3489782002',
+    local: 'explicit.stat_4052037485',
+    name: 'maximum Energy Shield'
+  },
+  'explicit.stat_4052037485': {
+    global: 'explicit.stat_3489782002',
+    local: 'explicit.stat_4052037485',
+    name: 'maximum Energy Shield'
+  },
+  // +# to Armour
+  'explicit.stat_809229260': {
+    global: 'explicit.stat_809229260',
+    local: 'explicit.stat_3484657501',
+    name: 'Armour'
+  },
+  'explicit.stat_3484657501': {
+    global: 'explicit.stat_809229260',
+    local: 'explicit.stat_3484657501',
+    name: 'Armour'
+  },
+  // +# to Evasion Rating
+  'explicit.stat_2144192055': {
+    global: 'explicit.stat_2144192055',
+    local: 'explicit.stat_53045048',
+    name: 'Evasion Rating'
+  },
+  'explicit.stat_53045048': {
+    global: 'explicit.stat_2144192055',
+    local: 'explicit.stat_53045048',
+    name: 'Evasion Rating'
+  }
+};
+
+/**
  * Generates a trade URL for a given item
  * @param {object} item - Item data
  * @param {string} game - 'poe2' or 'poe1'
@@ -90,6 +131,7 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
   // Añadir mods si tenemos stats disponibles
   if (stats && stats.result) {
     const statFilters = [];
+    const countGroups = []; // For stats with local/global variants
 
     // DEBUG: Log para desarrollo
     if (process.env.NODE_ENV === 'development') {
@@ -162,20 +204,58 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
           }
         }
         if (statId) {
-          const filter = { id: statId, disabled: false };
           const maxKey = `explicit_${i}`;
 
           // Use transformed value if mod was transformed, otherwise use original
           const minValue = transformed ? transformedValue : item.filters.minValues[minKey];
           const maxValue = item.filters.maxValues[maxKey];
 
-          if (minValue !== undefined || maxValue !== undefined) {
-            filter.value = {};
-            if (minValue !== undefined) filter.value.min = minValue;
-            if (maxValue !== undefined) filter.value.max = maxValue;
-          }
+          // Check if this stat has local/global variants
+          const variantInfo = STATS_WITH_LOCAL_VARIANTS[statId];
+          if (variantInfo) {
+            // Create a COUNT group with both global and local versions
+            const countFilters = [];
 
-          statFilters.push(filter);
+            // Add global version
+            const globalFilter = { id: variantInfo.global, disabled: false };
+            if (minValue !== undefined || maxValue !== undefined) {
+              globalFilter.value = {};
+              if (minValue !== undefined) globalFilter.value.min = minValue;
+              if (maxValue !== undefined) globalFilter.value.max = maxValue;
+            }
+            countFilters.push(globalFilter);
+
+            // Add local version
+            const localFilter = { id: variantInfo.local, disabled: false };
+            if (minValue !== undefined || maxValue !== undefined) {
+              localFilter.value = {};
+              if (minValue !== undefined) localFilter.value.min = minValue;
+              if (maxValue !== undefined) localFilter.value.max = maxValue;
+            }
+            countFilters.push(localFilter);
+
+            countGroups.push({
+              type: "count",
+              value: { min: 1 },
+              filters: countFilters,
+              disabled: false
+            });
+
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[EXPLICIT ${i}] Created COUNT group for ${variantInfo.name} (global: ${variantInfo.global}, local: ${variantInfo.local})`);
+            }
+          } else {
+            // Normal stat - add to regular filters
+            const filter = { id: statId, disabled: false };
+
+            if (minValue !== undefined || maxValue !== undefined) {
+              filter.value = {};
+              if (minValue !== undefined) filter.value.min = minValue;
+              if (maxValue !== undefined) filter.value.max = maxValue;
+            }
+
+            statFilters.push(filter);
+          }
         }
       }
     });
@@ -191,10 +271,11 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
 
     if (process.env.NODE_ENV === 'development') {
       console.log('Valid stat filters:', validStatFilters);
+      console.log('COUNT groups:', countGroups);
       console.groupEnd();
     }
 
-    // Añadir stats válidos al query
+    // Añadir stats válidos al query (grupo AND)
     if (validStatFilters.length > 0) {
       query.query.stats.push({
         type: "and",
@@ -202,6 +283,11 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
         disabled: false
       });
     }
+
+    // Añadir COUNT groups para stats con variantes local/global
+    countGroups.forEach(countGroup => {
+      query.query.stats.push(countGroup);
+    });
   }
   const encodedQuery = encodeURIComponent(JSON.stringify(query));
   const leagueParam = league.replace(/ /g, '%20');

@@ -724,3 +724,66 @@ Added direct mapping in `DIRECT_STAT_MAPPINGS`:
 ### Note
 
 This is a GGG API inconsistency - the stats endpoint uses PoE1 terminology ("Critical Strike Multiplier") while PoE2 items use "Critical Damage Bonus". The stat ID is the same for both.
+
+---
+
+## Session Work (2026-01-25) - Local/Global Flat Stat Variants
+
+### Problem
+
+Flat defence stats like `+# to maximum Energy Shield` have two versions in PoE2:
+- **Global version** - Used on jewellery/accessories
+- **Local version** - Used on armour (adds to item's base defence)
+
+When searching for items with these stats, if the wrong version is used, no results are returned.
+
+### Solution
+
+Implemented COUNT groups in trade queries for stats with local/global variants. When one of these stats is detected, instead of a simple filter, we create a COUNT group with `min: 1` containing both versions.
+
+**Example query structure:**
+```json
+{
+  "stats": [
+    {
+      "type": "and",
+      "filters": [... other stats ...]
+    },
+    {
+      "type": "count",
+      "value": { "min": 1 },
+      "filters": [
+        { "id": "explicit.stat_3489782002", "value": { "min": 55 } },
+        { "id": "explicit.stat_4052037485", "value": { "min": 55 } }
+      ]
+    }
+  ]
+}
+```
+
+### Stats with Local/Global Variants
+
+| Stat | Global ID | Local ID |
+|------|-----------|----------|
+| +# to maximum Energy Shield | `explicit.stat_3489782002` | `explicit.stat_4052037485` |
+| +# to Armour | `explicit.stat_809229260` | `explicit.stat_3484657501` |
+| +# to Evasion Rating | `explicit.stat_2144192055` | `explicit.stat_53045048` |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/tradeAPI.js` | Added `STATS_WITH_LOCAL_VARIANTS` mapping and COUNT group generation logic |
+
+### Key Code
+
+```javascript
+const STATS_WITH_LOCAL_VARIANTS = {
+  'explicit.stat_3489782002': {
+    global: 'explicit.stat_3489782002',
+    local: 'explicit.stat_4052037485',
+    name: 'maximum Energy Shield'
+  },
+  // ... more variants
+};
+```
