@@ -66,6 +66,9 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
         },
         misc_filters: {
           filters: {}
+        },
+        equipment_filters: {
+          filters: {}
         }
       }
     },
@@ -112,6 +115,45 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
     query.query.filters.type_filters.filters.ilvl = {
       min: item.ilvl
     };
+  }
+
+  // Añadir filtros de defensa (equipment_filters)
+  if (item.filters?.defenceFilters) {
+    const { defenceFilters } = item.filters;
+
+    // Energy Shield
+    if (defenceFilters.energyShield?.enabled) {
+      const esFilter = {};
+      if (defenceFilters.energyShield.min) esFilter.min = defenceFilters.energyShield.min;
+      if (defenceFilters.energyShield.max) esFilter.max = defenceFilters.energyShield.max;
+      if (Object.keys(esFilter).length > 0) {
+        query.query.filters.equipment_filters.filters.es = esFilter;
+      }
+    }
+
+    // Armour
+    if (defenceFilters.armour?.enabled) {
+      const arFilter = {};
+      if (defenceFilters.armour.min) arFilter.min = defenceFilters.armour.min;
+      if (defenceFilters.armour.max) arFilter.max = defenceFilters.armour.max;
+      if (Object.keys(arFilter).length > 0) {
+        query.query.filters.equipment_filters.filters.ar = arFilter;
+      }
+    }
+
+    // Evasion
+    if (defenceFilters.evasion?.enabled) {
+      const evFilter = {};
+      if (defenceFilters.evasion.min) evFilter.min = defenceFilters.evasion.min;
+      if (defenceFilters.evasion.max) evFilter.max = defenceFilters.evasion.max;
+      if (Object.keys(evFilter).length > 0) {
+        query.query.filters.equipment_filters.filters.ev = evFilter;
+      }
+    }
+
+    if (process.env.NODE_ENV === 'development' && Object.keys(query.query.filters.equipment_filters.filters).length > 0) {
+      console.log('[TRADE] Equipment filters:', query.query.filters.equipment_filters.filters);
+    }
   }
 
   // Nota: No filtramos por corrupted ni fractured_item por defecto

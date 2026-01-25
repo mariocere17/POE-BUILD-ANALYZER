@@ -172,8 +172,8 @@ export const getItemCategory = (item) => {
       return ITEM_CATEGORIES.jewels;
     }
 
-    // Check for weapons (common weapon types) - includes quivers as off-hand
-    const weaponTypes = ['sword', 'axe', 'mace', 'staff', 'wand', 'dagger', 'claw', 'bow', 'sceptre', 'flail', 'crossbow', 'spear', 'quarterstaff', 'trap', 'focus', 'quiver'];
+    // Check for weapons (common weapon types) - includes quivers as off-hand and talismans (PoE2 focus weapons)
+    const weaponTypes = ['sword', 'axe', 'mace', 'staff', 'wand', 'dagger', 'claw', 'bow', 'sceptre', 'flail', 'crossbow', 'spear', 'quarterstaff', 'trap', 'focus', 'quiver', 'talisman'];
     if (weaponTypes.some(w => baseTypeLower.includes(w))) {
       return ITEM_CATEGORIES.weapons;
     }

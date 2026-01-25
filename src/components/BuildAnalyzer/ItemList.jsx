@@ -76,9 +76,9 @@ const ItemList = ({
 
   return (
     <div className="space-y-5">
-      {/* Header - Mobile: stacked, Desktop: row */}
-      <div className="mb-6 space-y-4">
-        {/* Title and category selector */}
+      {/* Header - Mobile: stacked, Desktop: single row */}
+      <div className="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        {/* Left side: Title and category selector */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <h2 className="text-2xl sm:text-3xl font-bold text-cyan-400">
             {t('itemList.itemsFound')} ({filteredItems.length})
@@ -96,7 +96,7 @@ const ItemList = ({
           </select>
         </div>
 
-        {/* League and Status filters */}
+        {/* Right side: League and Status filters */}
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
           <div className="text-sm text-slate-300 bg-slate-800/70 px-4 py-2 rounded-lg border-2 border-slate-700">
             {t('itemList.league')}: <span className="text-cyan-400 font-bold">{leagueDisplay}</span>

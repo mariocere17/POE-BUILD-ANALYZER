@@ -77,7 +77,11 @@ Examples:
       saveChanges: 'Save Changes',
       cancel: 'Cancel',
       fractured: 'Fractured',
-      fracturedTooltip: 'Search for this mod as fractured (only one can be selected)'
+      fracturedTooltip: 'Search for this mod as fractured (only one can be selected)',
+      equipmentFilters: 'Equipment Filters',
+      energyShield: 'Energy Shield',
+      armour: 'Armour',
+      evasion: 'Evasion'
     },
 
     // Report Modal
@@ -269,7 +273,11 @@ Ejemplos:
       saveChanges: 'Guardar Cambios',
       cancel: 'Cancelar',
       fractured: 'Fracturado',
-      fracturedTooltip: 'Buscar este mod como fracturado (solo uno puede ser seleccionado)'
+      fracturedTooltip: 'Buscar este mod como fracturado (solo uno puede ser seleccionado)',
+      equipmentFilters: 'Filtros de Equipamiento',
+      energyShield: 'Escudo de Energía',
+      armour: 'Armadura',
+      evasion: 'Evasión'
     },
 
     // Report Modal

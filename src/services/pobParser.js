@@ -136,10 +136,10 @@ export const parsePoB = async (code) => {
     const lines = itemText.split('\n').map(l => l.trim()).filter(l => l);
     if (lines.length < 1) return;
 
-    // Debug logging for flasks
+    // Debug logging for specific items
     if (process.env.NODE_ENV === 'development' &&
-        (itemText.toLowerCase().includes('flask') || itemText.toLowerCase().includes('penetrating'))) {
-      console.log('=== FLASK DEBUG ===');
+        itemText.toLowerCase().includes('corruption ward')) {
+      console.log('=== CORRUPTION WARD DEBUG ===');
       console.log('Raw itemText:', itemText);
       console.log('Lines:', lines);
     }
@@ -168,10 +168,10 @@ export const parsePoB = async (code) => {
     let name = lines[nameLineIdx] || lines[0];
     let baseType = lines[nameLineIdx + 1] || lines[1] || name;
 
-    // Debug: log name extraction for flasks
+    // Debug: log name extraction for specific items
     if (process.env.NODE_ENV === 'development' &&
-        (itemText.toLowerCase().includes('flask') || itemText.toLowerCase().includes('penetrating'))) {
-      console.log('=== FLASK NAME DEBUG ===');
+        itemText.toLowerCase().includes('corruption ward')) {
+      console.log('=== CORRUPTION WARD NAME DEBUG ===');
       console.log('nameLineIdx:', nameLineIdx);
       console.log('name (initial):', name);
       console.log('baseType (initial):', baseType);
@@ -219,6 +219,24 @@ export const parsePoB = async (code) => {
     // Extraer nivel requerido
     const levelReqMatch = itemText.match(/LevelReq: (\d+)/);
     const levelReq = levelReqMatch ? parseInt(levelReqMatch[1]) : null;
+
+    // Extraer propiedades de defensa (armour items)
+    const energyShieldMatch = itemText.match(/Energy Shield: (\d+)/);
+    const armourMatch = itemText.match(/Armour: (\d+)/);
+    const evasionMatch = itemText.match(/Evasion: (\d+)/);
+
+    const defenceProperties = {
+      energyShield: energyShieldMatch ? parseInt(energyShieldMatch[1]) : null,
+      armour: armourMatch ? parseInt(armourMatch[1]) : null,
+      evasion: evasionMatch ? parseInt(evasionMatch[1]) : null
+    };
+
+    // Debug: log defence properties for specific items
+    if (process.env.NODE_ENV === 'development' &&
+        itemText.toLowerCase().includes('corruption ward')) {
+      console.log('=== CORRUPTION WARD DEFENCE DEBUG ===');
+      console.log('defenceProperties:', defenceProperties);
+    }
 
     // Detectar corrupción
     const corrupted = itemText.includes('Corrupted');
@@ -361,6 +379,7 @@ export const parsePoB = async (code) => {
       ilvl,
       levelReq,
       corrupted,
+      defenceProperties,
       slot: slotAttr,
       rawText: itemText,
       filters: {
@@ -378,7 +397,13 @@ export const parsePoB = async (code) => {
         selectedEnchants: enchantMods.map(() => false),
         selectedExplicits: explicitMods.map(() => true),
         fracturedModIndex: null, // Index of the explicit mod to search as fractured (null = none)
-        searchFractured: implicitMods.some(m => m.fractured) || explicitMods.some(m => m.fractured)
+        searchFractured: implicitMods.some(m => m.fractured) || explicitMods.some(m => m.fractured),
+        // Defence filters (for armour items)
+        defenceFilters: {
+          energyShield: { min: defenceProperties.energyShield, max: null, enabled: false },
+          armour: { min: defenceProperties.armour, max: null, enabled: false },
+          evasion: { min: defenceProperties.evasion, max: null, enabled: false }
+        }
       }
     });
   });

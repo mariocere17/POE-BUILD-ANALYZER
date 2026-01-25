@@ -6,17 +6,30 @@ import { useLanguage } from '../../i18n/LanguageContext';
 
 const EditItemModal = ({ item, onClose, onSave }) => {
   const { t } = useLanguage();
-  // Deep copy filters and ensure fracturedModIndex exists
+  // Deep copy filters and ensure fracturedModIndex and defenceFilters exist
   const [editedItem, setEditedItem] = useState(() => ({
     ...item,
     filters: {
       ...item.filters,
-      fracturedModIndex: item.filters.fracturedModIndex ?? null
+      fracturedModIndex: item.filters.fracturedModIndex ?? null,
+      defenceFilters: item.filters.defenceFilters ?? {
+        energyShield: { min: null, max: null, enabled: false },
+        armour: { min: null, max: null, enabled: false },
+        evasion: { min: null, max: null, enabled: false }
+      }
     }
   }));
 
+  // Check if item has any defence properties
+  const hasDefenceProperties = item.defenceProperties && (
+    item.defenceProperties.energyShield !== null ||
+    item.defenceProperties.armour !== null ||
+    item.defenceProperties.evasion !== null
+  );
+
   // Track which sections are expanded (all expanded by default)
   const [expandedSections, setExpandedSections] = useState({
+    defence: true,
     enchants: true,
     implicits: true,
     explicits: true
@@ -61,6 +74,28 @@ const EditItemModal = ({ item, onClose, onSave }) => {
     });
   };
 
+  const handleDefenceFilterChange = (defenceType, field, value) => {
+    const currentFilter = editedItem.filters.defenceFilters[defenceType];
+    const newFilter = { ...currentFilter };
+
+    if (field === 'enabled') {
+      newFilter.enabled = value;
+    } else {
+      newFilter[field] = value ? parseInt(value) : null;
+    }
+
+    setEditedItem({
+      ...editedItem,
+      filters: {
+        ...editedItem.filters,
+        defenceFilters: {
+          ...editedItem.filters.defenceFilters,
+          [defenceType]: newFilter
+        }
+      }
+    });
+  };
+
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-cyan-500/40 rounded-xl max-w-3xl w-full max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col shadow-2xl shadow-cyan-500/20">
@@ -101,6 +136,131 @@ const EditItemModal = ({ item, onClose, onSave }) => {
               </select>
             </div>
           </div>
+
+          {/* Defence Filters Section */}
+          {hasDefenceProperties && (
+            <div>
+              <button
+                type="button"
+                onClick={() => toggleSection('defence')}
+                className="w-full flex items-center justify-between text-sm text-blue-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-blue-400 pl-3 pr-2 py-1 hover:bg-slate-800/50 rounded-r transition-colors"
+              >
+                <span>{t('editModal.equipmentFilters')}</span>
+                <ChevronDown
+                  size={20}
+                  className={`transition-transform duration-200 ${expandedSections.defence ? '' : '-rotate-90'}`}
+                />
+              </button>
+              {expandedSections.defence && (
+                <div className="space-y-2">
+                  {/* Energy Shield */}
+                  {item.defenceProperties?.energyShield !== null && (
+                    <div className="bg-slate-800/60 border-l-2 border-blue-500/50 p-3 rounded hover:bg-slate-800 transition-all">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={editedItem.filters.defenceFilters.energyShield.enabled}
+                          onChange={(e) => handleDefenceFilterChange('energyShield', 'enabled', e.target.checked)}
+                          className="w-5 h-5 cursor-pointer accent-blue-500 flex-shrink-0"
+                        />
+                        <span className="flex-1 text-sm text-blue-100 font-medium">
+                          {t('editModal.energyShield')} <span className="text-slate-400">({item.defenceProperties.energyShield})</span>
+                        </span>
+                      </div>
+                      {editedItem.filters.defenceFilters.energyShield.enabled && (
+                        <div className="flex gap-2 mt-2 ml-8">
+                          <input
+                            type="number"
+                            placeholder={t('editModal.minPlaceholder')}
+                            value={editedItem.filters.defenceFilters.energyShield.min || ''}
+                            onChange={(e) => handleDefenceFilterChange('energyShield', 'min', e.target.value)}
+                            className="w-20 sm:w-24 bg-slate-700 border border-slate-600 sm:border-2 rounded px-2 sm:px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                          />
+                          <input
+                            type="number"
+                            placeholder={t('editModal.maxPlaceholder')}
+                            value={editedItem.filters.defenceFilters.energyShield.max || ''}
+                            onChange={(e) => handleDefenceFilterChange('energyShield', 'max', e.target.value)}
+                            className="w-20 sm:w-24 bg-slate-700 border border-slate-600 sm:border-2 rounded px-2 sm:px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Armour */}
+                  {item.defenceProperties?.armour !== null && (
+                    <div className="bg-slate-800/60 border-l-2 border-blue-500/50 p-3 rounded hover:bg-slate-800 transition-all">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={editedItem.filters.defenceFilters.armour.enabled}
+                          onChange={(e) => handleDefenceFilterChange('armour', 'enabled', e.target.checked)}
+                          className="w-5 h-5 cursor-pointer accent-blue-500 flex-shrink-0"
+                        />
+                        <span className="flex-1 text-sm text-blue-100 font-medium">
+                          {t('editModal.armour')} <span className="text-slate-400">({item.defenceProperties.armour})</span>
+                        </span>
+                      </div>
+                      {editedItem.filters.defenceFilters.armour.enabled && (
+                        <div className="flex gap-2 mt-2 ml-8">
+                          <input
+                            type="number"
+                            placeholder={t('editModal.minPlaceholder')}
+                            value={editedItem.filters.defenceFilters.armour.min || ''}
+                            onChange={(e) => handleDefenceFilterChange('armour', 'min', e.target.value)}
+                            className="w-20 sm:w-24 bg-slate-700 border border-slate-600 sm:border-2 rounded px-2 sm:px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                          />
+                          <input
+                            type="number"
+                            placeholder={t('editModal.maxPlaceholder')}
+                            value={editedItem.filters.defenceFilters.armour.max || ''}
+                            onChange={(e) => handleDefenceFilterChange('armour', 'max', e.target.value)}
+                            className="w-20 sm:w-24 bg-slate-700 border border-slate-600 sm:border-2 rounded px-2 sm:px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Evasion */}
+                  {item.defenceProperties?.evasion !== null && (
+                    <div className="bg-slate-800/60 border-l-2 border-blue-500/50 p-3 rounded hover:bg-slate-800 transition-all">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={editedItem.filters.defenceFilters.evasion.enabled}
+                          onChange={(e) => handleDefenceFilterChange('evasion', 'enabled', e.target.checked)}
+                          className="w-5 h-5 cursor-pointer accent-blue-500 flex-shrink-0"
+                        />
+                        <span className="flex-1 text-sm text-blue-100 font-medium">
+                          {t('editModal.evasion')} <span className="text-slate-400">({item.defenceProperties.evasion})</span>
+                        </span>
+                      </div>
+                      {editedItem.filters.defenceFilters.evasion.enabled && (
+                        <div className="flex gap-2 mt-2 ml-8">
+                          <input
+                            type="number"
+                            placeholder={t('editModal.minPlaceholder')}
+                            value={editedItem.filters.defenceFilters.evasion.min || ''}
+                            onChange={(e) => handleDefenceFilterChange('evasion', 'min', e.target.value)}
+                            className="w-20 sm:w-24 bg-slate-700 border border-slate-600 sm:border-2 rounded px-2 sm:px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                          />
+                          <input
+                            type="number"
+                            placeholder={t('editModal.maxPlaceholder')}
+                            value={editedItem.filters.defenceFilters.evasion.max || ''}
+                            onChange={(e) => handleDefenceFilterChange('evasion', 'max', e.target.value)}
+                            className="w-20 sm:w-24 bg-slate-700 border border-slate-600 sm:border-2 rounded px-2 sm:px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {editedItem.enchantMods.length > 0 && (
             <div>
