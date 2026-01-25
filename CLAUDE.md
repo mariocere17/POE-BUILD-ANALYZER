@@ -787,3 +787,69 @@ const STATS_WITH_LOCAL_VARIANTS = {
   // ... more variants
 };
 ```
+
+---
+
+## Session Work (2026-01-25) - Remove Default Trade Filters
+
+### Problem
+
+Trade searches were filtering out corrupted and fractured items by default, limiting results.
+
+### Solution
+
+Removed the default filters for `corrupted: false` and `fractured_item: no` from `tradeAPI.js`. Now searches return all items regardless of corruption or fractured status, making searches more inclusive.
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/tradeAPI.js` | Removed default corrupted and fractured_item filters |
+
+---
+
+## Session Work (2026-01-25) - Project Cleanup
+
+### Files Removed
+
+| File | Reason |
+|------|--------|
+| `.stylelintrc.json` | Config file for stylelint but package not installed |
+| `public/logo512.png` | Unused logo file, only referenced in manifest.json |
+
+### Files Updated
+
+| File | Changes |
+|------|---------|
+| `public/manifest.json` | Removed logo512.png reference, updated app name to "PoE Build Analyzer" |
+| `src/components/PoeNinja/README.md` | Cleaned up references to non-existent components (CurrencyPanel, CurrencyConverterExample) |
+
+---
+
+## Quick Reference - Current State
+
+### Trade Query Generation (`tradeAPI.js`)
+
+1. **Normal stats** → Added to `type: "and"` group
+2. **Stats with local/global variants** → Added to separate `type: "count"` groups with `min: 1`
+3. **No default filtering** → Corrupted and fractured items are included
+
+### Stat Lookup Priority (`statsAPI.js`)
+
+```
+0. UNSEARCHABLE_MODS → skip
+0b. UNSEARCHABLE_IMPLICIT_MODS (if implicit) → skip
+1. DIRECT_STAT_MAPPINGS → return immediately
+2. findStatIdExact() with STAT_ALIASES → exact match
+3. findStatIdFuzzy() → token-based fuzzy (if enabled)
+4. Return null → excluded from search
+```
+
+### Key Direct Mappings
+
+| PoB Text | Trade API ID |
+|----------|--------------|
+| `#% increased Critical Damage Bonus` | `explicit.stat_3556824919` |
+| `#% increased Critical Hit Chance` | `explicit.stat_587431675` |
+| `#% increased effect of Socketed Items` | `explicit.stat_2081918629` |
+| `+# to Spirit` | `explicit.stat_3981240776` |
