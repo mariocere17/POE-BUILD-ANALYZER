@@ -926,6 +926,85 @@ When `#% increased Energy Shield` is marked as fractured:
 
 ---
 
+## Session Work (2026-01-25) - Edit Modal UX Improvements
+
+### Problem
+
+The Edit Item Modal had multiple scrollbars (one per section: Enchants, Implicits, Explicits) which looked cluttered and was poor UX.
+
+### Solution
+
+Implemented collapsible accordion sections with a single global scroll.
+
+#### Changes Made
+
+1. **Collapsible Sections**
+   - Each section header (Enchants, Implicit Mods, Explicit Mods) is now clickable
+   - ChevronDown icon rotates 90° when collapsed
+   - Smooth transition animation
+   - All sections expanded by default
+
+2. **Single Global Scroll**
+   - Removed individual `max-h-XX overflow-y-auto` from each section
+   - Single scroll on the main content container
+
+3. **Custom Styled Scrollbar**
+   - Width: 8px
+   - Track: slate-800 (`#1e293b`)
+   - Thumb: cyan-600 (`#0891b2`) with lighter hover state
+   - Rounded corners
+   - Firefox support via `scrollbar-width` and `scrollbar-color`
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/components/BuildAnalyzer/EditItemModal.jsx` | Added `expandedSections` state, `toggleSection()`, collapsible UI with ChevronDown icons, `custom-scrollbar` class |
+| `src/index.css` | Added `.custom-scrollbar` styles for webkit and Firefox |
+
+### Key Code
+
+**State for collapsible sections:**
+```javascript
+const [expandedSections, setExpandedSections] = useState({
+  enchants: true,
+  implicits: true,
+  explicits: true
+});
+
+const toggleSection = (section) => {
+  setExpandedSections(prev => ({
+    ...prev,
+    [section]: !prev[section]
+  }));
+};
+```
+
+**Custom scrollbar CSS:**
+```css
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #0891b2;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #06b6d4;
+}
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #0891b2 #1e293b;
+}
+```
+
+---
+
 ## Quick Reference - Current State
 
 ### Trade Query Generation (`tradeAPI.js`)
