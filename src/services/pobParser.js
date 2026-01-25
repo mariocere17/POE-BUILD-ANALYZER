@@ -377,6 +377,7 @@ export const parsePoB = async (code) => {
         selectedImplicits: implicitMods.map(() => true),
         selectedEnchants: enchantMods.map(() => false),
         selectedExplicits: explicitMods.map(() => true),
+        fracturedModIndex: null, // Index of the explicit mod to search as fractured (null = none)
         searchFractured: implicitMods.some(m => m.fractured) || explicitMods.some(m => m.fractured)
       }
     });

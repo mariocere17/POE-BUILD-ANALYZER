@@ -826,13 +826,114 @@ Removed the default filters for `corrupted: false` and `fractured_item: no` from
 
 ---
 
+## Session Work (2026-01-25) - Fractured Mod Selector
+
+### New Feature
+
+Added ability to mark a single explicit mod as "Fractured" in the Edit Item Modal. When searching for items, this mod will use the `fractured.stat_XXXX` prefix instead of `explicit.stat_XXXX`.
+
+### How It Works
+
+1. In the Edit Item Modal, each explicit mod now has a "Fractured" button
+2. Only ONE mod can be marked as fractured (radio button behavior)
+3. Clicking an already-selected fractured button deselects it
+4. When a mod is marked as fractured:
+   - The stat ID changes from `explicit.stat_XXXX` to `fractured.stat_XXXX`
+   - The query includes `fractured_item: { option: true }` filter
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/pobParser.js` | Added `fracturedModIndex: null` to filters initialization |
+| `src/components/BuildAnalyzer/EditItemModal.jsx` | Added `handleFracturedToggle()`, fractured button UI with amber styling |
+| `src/components/BuildAnalyzer/ItemCard.jsx` | Fixed memo comparator to include `item.filters` for proper re-rendering |
+| `src/services/tradeAPI.js` | Added fractured mod detection, prefix replacement `explicit.` → `fractured.`, and `fractured_item` filter |
+| `src/services/statsAPI.js` | Updated `validateStatId()` to validate fractured stat IDs based on explicit equivalents |
+| `src/i18n/translations.js` | Added `editModal.fractured` and `editModal.fracturedTooltip` (EN/ES) |
+
+### Key Code
+
+**Filter initialization (pobParser.js):**
+```javascript
+filters: {
+  // ... other filters
+  fracturedModIndex: null, // Index of explicit mod to search as fractured
+}
+```
+
+**Fractured toggle handler (EditItemModal.jsx):**
+```javascript
+const handleFracturedToggle = (index) => {
+  const newIndex = editedItem.filters.fracturedModIndex === index ? null : index;
+  setEditedItem({
+    ...editedItem,
+    filters: { ...editedItem.filters, fracturedModIndex: newIndex }
+  });
+};
+```
+
+**Trade query generation (tradeAPI.js):**
+```javascript
+const isFractured = fracturedModIndex === i;
+let statId = findStatId(stats, transformedMod, 'explicit');
+
+// If fractured, replace explicit prefix with fractured prefix
+if (isFractured && statId && statId.startsWith('explicit.')) {
+  statId = statId.replace('explicit.', 'fractured.');
+}
+
+// Add fractured_item filter when a mod is marked as fractured
+if (hasFracturedMod) {
+  query.query.filters.misc_filters.filters.fractured_item = { option: true };
+}
+```
+
+**Memo comparator fix (ItemCard.jsx):**
+```javascript
+// CRITICAL: Must include filters to ensure trade URL uses updated values
+prevProps.item.filters === nextProps.item.filters
+```
+
+### Example Query with Fractured Mod
+
+When `#% increased Energy Shield` is marked as fractured:
+```json
+{
+  "query": {
+    "stats": [{
+      "type": "and",
+      "filters": [
+        { "id": "fractured.stat_4015621042", "value": { "min": 91 } }
+      ]
+    }],
+    "filters": {
+      "misc_filters": {
+        "filters": {
+          "fractured_item": { "option": true }
+        }
+      }
+    }
+  }
+}
+```
+
+### UI Styling
+
+- Default state: Gray button with slate border
+- Selected state: Amber background, amber border, amber text
+- Selected mod row: Amber left border, amber text color
+
+---
+
 ## Quick Reference - Current State
 
 ### Trade Query Generation (`tradeAPI.js`)
 
 1. **Normal stats** → Added to `type: "and"` group
 2. **Stats with local/global variants** → Added to separate `type: "count"` groups with `min: 1`
-3. **No default filtering** → Corrupted and fractured items are included
+3. **Fractured mods** → Use `fractured.stat_XXXX` prefix + `fractured_item: true` filter
+4. **No default filtering** → Corrupted and fractured items are included
 
 ### Stat Lookup Priority (`statsAPI.js`)
 

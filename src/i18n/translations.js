@@ -75,7 +75,9 @@ Examples:
       minPlaceholder: 'Min',
       maxPlaceholder: 'Max',
       saveChanges: 'Save Changes',
-      cancel: 'Cancel'
+      cancel: 'Cancel',
+      fractured: 'Fractured',
+      fracturedTooltip: 'Search for this mod as fractured (only one can be selected)'
     },
 
     // Report Modal
@@ -265,7 +267,9 @@ Ejemplos:
       minPlaceholder: 'Mín',
       maxPlaceholder: 'Máx',
       saveChanges: 'Guardar Cambios',
-      cancel: 'Cancelar'
+      cancel: 'Cancelar',
+      fractured: 'Fracturado',
+      fracturedTooltip: 'Buscar este mod como fracturado (solo uno puede ser seleccionado)'
     },
 
     // Report Modal

@@ -199,6 +199,7 @@ const ItemCard = memo(({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }
   );
 }, (prevProps, nextProps) => {
   // Custom comparator: only re-render when these props actually change
+  // IMPORTANT: Must include filters to ensure trade URL uses updated values
   return (
     prevProps.item.id === nextProps.item.id &&
     prevProps.index === nextProps.index &&
@@ -210,7 +211,9 @@ const ItemCard = memo(({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }
     prevProps.item.corrupted === nextProps.item.corrupted &&
     prevProps.item.enchantMods.length === nextProps.item.enchantMods.length &&
     prevProps.item.implicitMods.length === nextProps.item.implicitMods.length &&
-    prevProps.item.explicitMods.length === nextProps.item.explicitMods.length
+    prevProps.item.explicitMods.length === nextProps.item.explicitMods.length &&
+    // Compare filters that affect trade URL generation
+    prevProps.item.filters === nextProps.item.filters
   );
 });
 

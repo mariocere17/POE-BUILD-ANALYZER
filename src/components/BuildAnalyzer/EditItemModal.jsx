@@ -6,7 +6,14 @@ import { useLanguage } from '../../i18n/LanguageContext';
 
 const EditItemModal = ({ item, onClose, onSave }) => {
   const { t } = useLanguage();
-  const [editedItem, setEditedItem] = useState({ ...item });
+  // Deep copy filters and ensure fracturedModIndex exists
+  const [editedItem, setEditedItem] = useState(() => ({
+    ...item,
+    filters: {
+      ...item.filters,
+      fracturedModIndex: item.filters.fracturedModIndex ?? null
+    }
+  }));
 
   const handleModToggle = (type, index, checked) => {
     const key = type === 'implicit' ? 'selectedImplicits' :
@@ -27,6 +34,16 @@ const EditItemModal = ({ item, onClose, onSave }) => {
     setEditedItem({
       ...editedItem,
       filters: { ...editedItem.filters, [key]: newValues }
+    });
+  };
+
+  const handleFracturedToggle = (index) => {
+    // If clicking the already selected one, deselect it (set to null)
+    // Otherwise, select the new one
+    const newIndex = editedItem.filters.fracturedModIndex === index ? null : index;
+    setEditedItem({
+      ...editedItem,
+      filters: { ...editedItem.filters, fracturedModIndex: newIndex }
     });
   };
 
@@ -154,14 +171,14 @@ const EditItemModal = ({ item, onClose, onSave }) => {
               </label>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {editedItem.explicitMods.map((mod, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-slate-800/60 border-l-2 border-cyan-500/50 p-3 rounded hover:bg-slate-800 transition-all">
+                  <div key={i} className={`flex items-center gap-3 bg-slate-800/60 p-3 rounded hover:bg-slate-800 transition-all ${editedItem.filters.fracturedModIndex === i ? 'border-l-2 border-amber-500' : 'border-l-2 border-cyan-500/50'}`}>
                     <input
                       type="checkbox"
                       checked={editedItem.filters.selectedExplicits[i]}
                       onChange={(e) => handleModToggle('explicit', i, e.target.checked)}
                       className="w-5 h-5 cursor-pointer accent-cyan-500"
                     />
-                    <span className="flex-1 text-sm text-cyan-100 font-medium">{mod.normalized}</span>
+                    <span className={`flex-1 text-sm font-medium ${editedItem.filters.fracturedModIndex === i ? 'text-amber-300' : 'text-cyan-100'}`}>{mod.normalized}</span>
                     {mod.value !== null && (
                       <div className="flex gap-2">
                         <input
@@ -179,6 +196,18 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                         />
                       </div>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => handleFracturedToggle(i)}
+                      title={t('editModal.fracturedTooltip')}
+                      className={`px-2 py-1 text-xs font-bold rounded border transition-all ${
+                        editedItem.filters.fracturedModIndex === i
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                          : 'bg-slate-700/50 border-slate-600 text-slate-400 hover:border-amber-500/50 hover:text-amber-400'
+                      }`}
+                    >
+                      {t('editModal.fractured')}
+                    </button>
                   </div>
                 ))}
               </div>

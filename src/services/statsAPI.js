@@ -626,11 +626,30 @@ export const validateStatId = (stats, statId) => {
     return true;
   }
 
+  // For fractured stats, check if the equivalent explicit stat exists
+  // fractured.stat_XXX is valid if explicit.stat_XXX exists
+  if (statId && statId.startsWith('fractured.')) {
+    const explicitEquivalent = statId.replace('fractured.', 'explicit.');
+    if (directMappingIds.includes(explicitEquivalent)) {
+      return true;
+    }
+  }
+
   if (!stats || !stats.result) return false;
 
   for (const category of stats.result) {
     if (category.entries.some(e => e.id === statId)) {
       return true;
+    }
+  }
+
+  // For fractured stats, also check if the explicit equivalent exists
+  if (statId && statId.startsWith('fractured.')) {
+    const explicitEquivalent = statId.replace('fractured.', 'explicit.');
+    for (const category of stats.result) {
+      if (category.entries.some(e => e.id === explicitEquivalent)) {
+        return true;
+      }
     }
   }
 

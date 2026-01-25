@@ -177,6 +177,9 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
     });
 
     // Procesar explícitos
+    const fracturedModIndex = item.filters.fracturedModIndex;
+    let hasFracturedMod = false;
+
     item.explicitMods.forEach((mod, i) => {
       if (item.filters.selectedExplicits[i]) {
         // Transform "reduced X" mods to "increased X" with negative value
@@ -184,12 +187,22 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
         const originalValue = item.filters.minValues[minKey] || mod.value;
         const { mod: transformedMod, value: transformedValue, transformed } = transformReducedMod(mod.normalized, originalValue);
 
-        const statId = findStatId(stats, transformedMod, 'explicit');
+        // Check if this mod should be searched as fractured
+        const isFractured = fracturedModIndex === i;
+
+        // Always search as explicit first, then convert to fractured prefix if needed
+        let statId = findStatId(stats, transformedMod, 'explicit');
+
+        // If fractured, replace explicit prefix with fractured prefix
+        if (isFractured && statId && statId.startsWith('explicit.')) {
+          statId = statId.replace('explicit.', 'fractured.');
+        }
         if (process.env.NODE_ENV === 'development') {
+          const fracturedLabel = isFractured ? ' [FRACTURED]' : '';
           if (transformed) {
-            console.log(`[EXPLICIT ${i}] "${mod.normalized}" (${originalValue}) -> transformed to "${transformedMod}" (${transformedValue}) -> ${statId || '❌ NOT FOUND'}`);
+            console.log(`[EXPLICIT ${i}]${fracturedLabel} "${mod.normalized}" (${originalValue}) -> transformed to "${transformedMod}" (${transformedValue}) -> ${statId || '❌ NOT FOUND'}`);
           } else {
-            console.log(`[EXPLICIT ${i}] "${mod.normalized}" -> ${statId || '❌ NOT FOUND'}`);
+            console.log(`[EXPLICIT ${i}]${fracturedLabel} "${mod.normalized}" -> ${statId || '❌ NOT FOUND'}`);
           }
         }
         if (statId) {
@@ -199,42 +212,9 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
           const minValue = transformed ? transformedValue : item.filters.minValues[minKey];
           const maxValue = item.filters.maxValues[maxKey];
 
-          // Check if this stat has local/global variants
-          const variantInfo = STATS_WITH_LOCAL_VARIANTS[statId];
-          if (variantInfo) {
-            // Create a COUNT group with both global and local versions
-            const countFilters = [];
-
-            // Add global version
-            const globalFilter = { id: variantInfo.global, disabled: false };
-            if (minValue !== undefined || maxValue !== undefined) {
-              globalFilter.value = {};
-              if (minValue !== undefined) globalFilter.value.min = minValue;
-              if (maxValue !== undefined) globalFilter.value.max = maxValue;
-            }
-            countFilters.push(globalFilter);
-
-            // Add local version
-            const localFilter = { id: variantInfo.local, disabled: false };
-            if (minValue !== undefined || maxValue !== undefined) {
-              localFilter.value = {};
-              if (minValue !== undefined) localFilter.value.min = minValue;
-              if (maxValue !== undefined) localFilter.value.max = maxValue;
-            }
-            countFilters.push(localFilter);
-
-            countGroups.push({
-              type: "count",
-              value: { min: 1 },
-              filters: countFilters,
-              disabled: false
-            });
-
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`[EXPLICIT ${i}] Created COUNT group for ${variantInfo.name} (global: ${variantInfo.global}, local: ${variantInfo.local})`);
-            }
-          } else {
-            // Normal stat - add to regular filters
+          // For fractured mods, we don't use local/global variants - just the fractured stat
+          if (isFractured) {
+            hasFracturedMod = true;
             const filter = { id: statId, disabled: false };
 
             if (minValue !== undefined || maxValue !== undefined) {
@@ -244,10 +224,62 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
             }
 
             statFilters.push(filter);
+          } else {
+            // Check if this stat has local/global variants
+            const variantInfo = STATS_WITH_LOCAL_VARIANTS[statId];
+            if (variantInfo) {
+              // Create a COUNT group with both global and local versions
+              const countFilters = [];
+
+              // Add global version
+              const globalFilter = { id: variantInfo.global, disabled: false };
+              if (minValue !== undefined || maxValue !== undefined) {
+                globalFilter.value = {};
+                if (minValue !== undefined) globalFilter.value.min = minValue;
+                if (maxValue !== undefined) globalFilter.value.max = maxValue;
+              }
+              countFilters.push(globalFilter);
+
+              // Add local version
+              const localFilter = { id: variantInfo.local, disabled: false };
+              if (minValue !== undefined || maxValue !== undefined) {
+                localFilter.value = {};
+                if (minValue !== undefined) localFilter.value.min = minValue;
+                if (maxValue !== undefined) localFilter.value.max = maxValue;
+              }
+              countFilters.push(localFilter);
+
+              countGroups.push({
+                type: "count",
+                value: { min: 1 },
+                filters: countFilters,
+                disabled: false
+              });
+
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`[EXPLICIT ${i}] Created COUNT group for ${variantInfo.name} (global: ${variantInfo.global}, local: ${variantInfo.local})`);
+              }
+            } else {
+              // Normal stat - add to regular filters
+              const filter = { id: statId, disabled: false };
+
+              if (minValue !== undefined || maxValue !== undefined) {
+                filter.value = {};
+                if (minValue !== undefined) filter.value.min = minValue;
+                if (maxValue !== undefined) filter.value.max = maxValue;
+              }
+
+              statFilters.push(filter);
+            }
           }
         }
       }
     });
+
+    // If a mod is marked as fractured, add the fractured_item filter
+    if (hasFracturedMod) {
+      query.query.filters.misc_filters.filters.fractured_item = { option: true };
+    }
 
     // Validar que los stats existen antes de añadirlos
     const validStatFilters = statFilters.filter(filter => {
