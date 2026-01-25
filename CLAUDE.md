@@ -1090,6 +1090,106 @@ All responsive changes use the `sm:` breakpoint (640px) for consistency.
 
 ---
 
+## Session Work (2026-01-25) - Equipment Defence Filters
+
+### New Feature
+
+Added ability to filter armour items by their defence properties (Energy Shield, Armour, Evasion) in the Edit Item Modal.
+
+### How It Works
+
+1. Defence properties (ES, Armour, Evasion) are parsed from PoB item text
+2. If an item has defence properties, "Equipment Filters" section appears in Edit Modal
+3. Each property can be enabled with checkbox and has Min/Max inputs
+4. Enabled filters are added to trade query as `equipment_filters`
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/pobParser.js` | Parse `Energy Shield:`, `Armour:`, `Evasion:` from item text, add `defenceProperties` to item, initialize `defenceFilters` in filters |
+| `src/components/BuildAnalyzer/EditItemModal.jsx` | Add collapsible "Equipment Filters" section (blue), checkbox + min/max inputs for each defence type |
+| `src/services/tradeAPI.js` | Add `equipment_filters` to query structure, generate `es`, `ar`, `ev` filters when enabled |
+| `src/i18n/translations.js` | Add `editModal.equipmentFilters`, `editModal.energyShield`, `editModal.armour`, `editModal.evasion` (EN/ES) |
+
+### Key Code
+
+**Defence property parsing (pobParser.js):**
+```javascript
+const energyShieldMatch = itemText.match(/Energy Shield: (\d+)/);
+const armourMatch = itemText.match(/Armour: (\d+)/);
+const evasionMatch = itemText.match(/Evasion: (\d+)/);
+
+const defenceProperties = {
+  energyShield: energyShieldMatch ? parseInt(energyShieldMatch[1]) : null,
+  armour: armourMatch ? parseInt(armourMatch[1]) : null,
+  evasion: evasionMatch ? parseInt(evasionMatch[1]) : null
+};
+```
+
+**Filter initialization (pobParser.js):**
+```javascript
+defenceFilters: {
+  energyShield: { min: defenceProperties.energyShield, max: null, enabled: false },
+  armour: { min: defenceProperties.armour, max: null, enabled: false },
+  evasion: { min: defenceProperties.evasion, max: null, enabled: false }
+}
+```
+
+**Trade query generation (tradeAPI.js):**
+```javascript
+// Add equipment_filters to query structure
+equipment_filters: {
+  filters: {}
+}
+
+// When defence filter is enabled
+if (defenceFilters.energyShield?.enabled) {
+  query.query.filters.equipment_filters.filters.es = {
+    min: defenceFilters.energyShield.min,
+    max: defenceFilters.energyShield.max
+  };
+}
+```
+
+---
+
+## Session Work (2026-01-25) - ItemList Header Reorganization
+
+### Change
+
+Reorganized the ItemList header to have a more logical visual layout:
+- **Left side:** "Items Found (X)" + Category selector
+- **Right side:** League badge + Status selector
+
+### Implementation
+
+Changed from two stacked rows to single row with `justify-between` on large screens:
+```javascript
+<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+```
+
+Uses `lg:` breakpoint (1024px) to ensure enough space for all elements.
+
+---
+
+## Session Work (2026-01-25) - Talisman Category Fix
+
+### Problem
+
+Talismans (like "Changeling Talisman") were incorrectly categorized as Armour.
+
+### Solution
+
+Added `talisman` to the weapon types array in `getItemCategory()`:
+```javascript
+const weaponTypes = ['sword', 'axe', 'mace', 'staff', 'wand', 'dagger', 'claw', 'bow', 'sceptre', 'flail', 'crossbow', 'spear', 'quarterstaff', 'trap', 'focus', 'quiver', 'talisman'];
+```
+
+Talismans in PoE2 are focus-type weapons, not accessories.
+
+---
+
 ## Quick Reference - Current State
 
 ### Trade Query Generation (`tradeAPI.js`)
@@ -1099,6 +1199,7 @@ All responsive changes use the `sm:` breakpoint (640px) for consistency.
 3. **Fractured mods with variants** → COUNT group with `fractured.` prefix for both global/local
 4. **Fractured mods without variants** → Added to AND group with `fractured.` prefix
 5. **No default filtering** → Corrupted and fractured items are included
+6. **Equipment filters** → Added to `equipment_filters.filters` as `es`, `ar`, `ev` when enabled
 
 ### Stat Lookup Priority (`statsAPI.js`)
 
