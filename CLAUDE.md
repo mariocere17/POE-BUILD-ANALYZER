@@ -1005,14 +1005,100 @@ const toggleSection = (section) => {
 
 ---
 
+## Session Work (2026-01-25) - Custom Scrollbar Site-Wide
+
+### Implementation
+
+Applied the `.custom-scrollbar` class to all scrollable elements across the site.
+
+### Files Modified
+
+| File | Element |
+|------|---------|
+| `src/components/BuildAnalyzer/EditItemModal.jsx` | Modal content area |
+| `src/components/Layout/UserGuideModal.jsx` | User guide content |
+| `src/components/ReportModal.js` | Modal container + textarea |
+| `src/components/BuildAnalyzer/BuildForm.jsx` | POB code textarea |
+
+---
+
+## Session Work (2026-01-25) - Fractured + Local/Global Variants Fix
+
+### Problem
+
+When a mod was marked as fractured AND had local/global variants (like `+# to maximum Energy Shield`), the code was adding it to the AND group instead of creating a COUNT group with fractured prefixes.
+
+### Solution
+
+Updated `tradeAPI.js` to check for local/global variants BEFORE handling the fractured logic. Now when a stat has variants:
+- Creates COUNT group with both global and local versions
+- Uses `fractured.` prefix if mod is marked as fractured
+- Uses `explicit.` prefix otherwise
+
+### Key Code Change
+
+```javascript
+// Check if this stat has local/global variants (use explicit ID for lookup)
+const explicitStatId = isFractured ? statId.replace('fractured.', 'explicit.') : statId;
+const variantInfo = STATS_WITH_LOCAL_VARIANTS[explicitStatId];
+
+if (variantInfo) {
+  // Determine prefix based on whether mod is fractured
+  const prefix = isFractured ? 'fractured.' : 'explicit.';
+  const globalId = variantInfo.global.replace('explicit.', prefix);
+  const localId = variantInfo.local.replace('explicit.', prefix);
+  // Create COUNT group with both versions...
+}
+```
+
+---
+
+## Session Work (2026-01-25) - Mobile Responsiveness
+
+### Problems
+
+1. ItemList header was cluttered on mobile
+2. ItemCard badges were too large, making cards very tall
+3. EditItemModal's Fractured button overflowed its container
+
+### Solutions
+
+#### ItemList (`src/components/BuildAnalyzer/ItemList.jsx`)
+- Title and category selector stack vertically on mobile (`flex-col sm:flex-row`)
+- Full-width dropdowns on small screens (`w-full sm:w-auto`)
+- League and status filters also stack on mobile
+
+#### ItemCard (`src/components/BuildAnalyzer/ItemCard.jsx`)
+- Reduced padding: `p-4 sm:p-6`
+- Smaller badges: `px-2 sm:px-3 py-1 sm:py-1.5`
+- Thinner borders on mobile: `border sm:border-2`
+- Shorter text: "Req Lvl X" → "Req X"
+- Truncate long item names: `truncate` class
+- Action buttons align to bottom on mobile: `self-end sm:self-start`
+
+#### EditItemModal (`src/components/BuildAnalyzer/EditItemModal.jsx`)
+- Two-row layout for mods:
+  - Row 1: Checkbox + mod text
+  - Row 2: Value inputs + Fractured button (with `ml-auto`)
+- Smaller inputs on mobile: `w-16 sm:w-20`
+- Reduced padding throughout: `p-4 sm:p-6`
+- Modal uses more height on mobile: `max-h-[90vh] sm:max-h-[85vh]`
+
+### Breakpoint Used
+
+All responsive changes use the `sm:` breakpoint (640px) for consistency.
+
+---
+
 ## Quick Reference - Current State
 
 ### Trade Query Generation (`tradeAPI.js`)
 
 1. **Normal stats** → Added to `type: "and"` group
 2. **Stats with local/global variants** → Added to separate `type: "count"` groups with `min: 1`
-3. **Fractured mods** → Use `fractured.stat_XXXX` prefix + `fractured_item: true` filter
-4. **No default filtering** → Corrupted and fractured items are included
+3. **Fractured mods with variants** → COUNT group with `fractured.` prefix for both global/local
+4. **Fractured mods without variants** → Added to AND group with `fractured.` prefix
+5. **No default filtering** → Corrupted and fractured items are included
 
 ### Stat Lookup Priority (`statsAPI.js`)
 
