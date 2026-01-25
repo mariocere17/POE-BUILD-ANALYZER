@@ -76,27 +76,29 @@ const ItemList = ({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-        <div className="flex items-center gap-4 flex-wrap">
-          <h2 className="text-3xl font-bold text-cyan-400">
+      {/* Header - Mobile: stacked, Desktop: row */}
+      <div className="mb-6 space-y-4">
+        {/* Title and category selector */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <h2 className="text-2xl sm:text-3xl font-bold text-cyan-400">
             {t('itemList.itemsFound')} ({filteredItems.length})
           </h2>
-          <div className="flex items-center gap-2">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-slate-800 border-2 border-slate-700 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all"
-            >
-              {categoryOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {t(`itemList.categories.${option.labelKey}`)} ({categoryCounts[option.value]})
-                </option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="bg-slate-800 border-2 border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all w-full sm:w-auto"
+          >
+            {categoryOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {t(`itemList.categories.${option.labelKey}`)} ({categoryCounts[option.value]})
+              </option>
+            ))}
+          </select>
         </div>
-        <div className="flex gap-3 items-center flex-wrap">
-          <div className="text-sm text-slate-300 bg-slate-800/70 px-5 py-2.5 rounded-lg border-2 border-slate-700">
+
+        {/* League and Status filters */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <div className="text-sm text-slate-300 bg-slate-800/70 px-4 py-2 rounded-lg border-2 border-slate-700">
             {t('itemList.league')}: <span className="text-cyan-400 font-bold">{leagueDisplay}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -104,7 +106,7 @@ const ItemList = ({
             <select
               value={sellerStatus}
               onChange={(e) => setSellerStatus(e.target.value)}
-              className="bg-slate-800 border-2 border-slate-700 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all"
+              className="bg-slate-800 border-2 border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all flex-1 sm:flex-none"
             >
               {SELLER_STATUS_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>{t(option.labelKey)}</option>

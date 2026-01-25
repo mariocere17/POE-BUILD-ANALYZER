@@ -11,42 +11,42 @@ const ItemCard = memo(({ item, index, copiedIndex, onEdit, onCopy, onOpenTrade }
   const [showAllExplicits, setShowAllExplicits] = useState(false);
 
   return (
-    <div className="bg-slate-900/50 border-2 border-slate-700 rounded-xl p-6 hover:border-cyan-500/50 transition-all duration-200 shadow-lg">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <h3 className={`text-2xl font-bold mb-1 ${getRarityColor(item.rarity)}`}>{item.name}</h3>
+    <div className="bg-slate-900/50 border-2 border-slate-700 rounded-xl p-4 sm:p-6 hover:border-cyan-500/50 transition-all duration-200 shadow-lg">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+        <div className="flex-1 min-w-0">
+          <h3 className={`text-xl sm:text-2xl font-bold mb-1 ${getRarityColor(item.rarity)} truncate`}>{item.name}</h3>
           {item.name !== item.baseType && (
-            <p className="text-sm text-slate-400">{item.baseType}</p>
+            <p className="text-sm text-slate-400 truncate">{item.baseType}</p>
           )}
-          <div className="flex flex-wrap gap-2 mt-3">
-            <span className="px-3 py-1.5 bg-slate-800 border-2 border-slate-600 rounded-md capitalize text-xs font-bold text-slate-300">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-3">
+            <span className="px-2 sm:px-3 py-1 sm:py-1.5 bg-slate-800 border border-slate-600 sm:border-2 rounded-md capitalize text-xs font-bold text-slate-300">
               {item.rarity}
             </span>
             {item.ilvl && (
-              <span className="px-3 py-1.5 bg-slate-800 border-2 border-slate-600 rounded-md text-xs font-bold text-slate-300">
+              <span className="px-2 sm:px-3 py-1 sm:py-1.5 bg-slate-800 border border-slate-600 sm:border-2 rounded-md text-xs font-bold text-slate-300">
                 iLvl {item.ilvl}
               </span>
             )}
             {item.levelReq > 0 && (
-              <span className="px-3 py-1.5 bg-blue-900/50 border-2 border-blue-500 text-blue-300 rounded-md text-xs font-bold">
-                Req Lvl {item.levelReq}
+              <span className="px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-900/50 border border-blue-500 sm:border-2 text-blue-300 rounded-md text-xs font-bold">
+                Req {item.levelReq}
               </span>
             )}
             {item.corrupted && (
-              <span className="px-3 py-1.5 bg-red-900/50 border-2 border-red-500 text-red-300 rounded-md text-xs font-bold">
+              <span className="px-2 sm:px-3 py-1 sm:py-1.5 bg-red-900/50 border border-red-500 sm:border-2 text-red-300 rounded-md text-xs font-bold">
                 {t('itemCard.corrupted')}
               </span>
             )}
             {item.socketCount > 0 && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/50 border-2 border-purple-500 rounded-md">
+              <div className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-purple-900/50 border border-purple-500 sm:border-2 rounded-md">
                 {Array.from({ length: item.socketCount }).map((_, i) => (
-                  <span key={i} className="inline-block w-3 h-3 rounded-full bg-purple-400 border-2 border-purple-300"></span>
+                  <span key={i} className="inline-block w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-purple-400 border border-purple-300 sm:border-2"></span>
                 ))}
               </div>
             )}
           </div>
         </div>
-        <div className="flex gap-2 ml-6 flex-shrink-0">
+        <div className="flex gap-2 flex-shrink-0 self-end sm:self-start">
           <button
             onClick={() => onEdit(item)}
             className="p-3 bg-slate-800 hover:bg-cyan-500/20 border-2 border-slate-600 hover:border-cyan-500 rounded-lg transition-all duration-200 flex-shrink-0"
