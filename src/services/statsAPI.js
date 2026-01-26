@@ -136,8 +136,10 @@ const DIRECT_STAT_MAPPINGS = {
   // =========================================================================
   'Gain #% of Damage as Extra Fire Damage': 'explicit.stat_3015669065',
   'Gain #% of Damage as Extra Lightning Damage': 'explicit.stat_3278136794',
-  'Gain #% of Damage as Extra Cold Damage': 'explicit.stat_2813449498',
-  'Gain #% of Damage as Extra Chaos Damage': 'explicit.stat_730877817',
+  'Gain #% of Damage as Extra Cold Damage': 'explicit.stat_2505884597',
+  'Gain #% of Damage as Extra Chaos Damage': 'explicit.stat_3398787959',
+  // Critical Spell Damage Bonus (different from regular Critical Damage Bonus)
+  '#% increased Critical Spell Damage Bonus': 'explicit.stat_274716455',
 };
 
 // ============================================================================
