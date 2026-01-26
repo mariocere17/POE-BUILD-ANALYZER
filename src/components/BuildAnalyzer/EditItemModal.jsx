@@ -31,6 +31,20 @@ const EditItemModal = ({ item, onClose, onSave }) => {
   // Check if item has socket info (PoE1 style sockets)
   const hasSocketInfo = item.socketInfo !== null && item.socketInfo !== undefined;
 
+  // Calculate max available sockets for a color based on other enabled colors
+  const getMaxForColor = (color) => {
+    if (!hasSocketInfo || !editedItem.filters.socketFilters) return 0;
+    const maxTotal = item.socketInfo.totalSockets;
+    const colors = ['r', 'g', 'b', 'w'];
+    const otherColorsSum = colors
+      .filter(c => c !== color)
+      .reduce((sum, c) => {
+        const filter = editedItem.filters.socketFilters[c];
+        return sum + (filter.enabled && filter.min ? filter.min : 0);
+      }, 0);
+    return Math.max(0, maxTotal - otherColorsSum);
+  };
+
   // Track which sections are expanded (all expanded by default)
   const [expandedSections, setExpandedSections] = useState({
     sockets: true,
@@ -110,7 +124,30 @@ const EditItemModal = ({ item, onClose, onSave }) => {
     if (field === 'enabled') {
       newFilter.enabled = value;
     } else {
-      newFilter[field] = value ? parseInt(value) : null;
+      // Parse and clamp value to valid range
+      let parsedValue = value ? parseInt(value) : null;
+      if (parsedValue !== null && item.socketInfo) {
+        const maxTotal = item.socketInfo.totalSockets;
+
+        if (socketType === 'links') {
+          // Links: clamp between 1 and totalSockets
+          parsedValue = Math.max(1, Math.min(parsedValue, maxTotal));
+        } else {
+          // Socket colors: sum of all enabled colors cannot exceed totalSockets
+          const colors = ['r', 'g', 'b', 'w'];
+          const otherColorsSum = colors
+            .filter(c => c !== socketType)
+            .reduce((sum, c) => {
+              const filter = editedItem.filters.socketFilters[c];
+              return sum + (filter.enabled && filter.min ? filter.min : 0);
+            }, 0);
+
+          // Max for this color is totalSockets minus other enabled colors
+          const maxForThisColor = Math.max(0, maxTotal - otherColorsSum);
+          parsedValue = Math.max(0, Math.min(parsedValue, maxForThisColor));
+        }
+      }
+      newFilter[field] = parsedValue;
     }
 
     setEditedItem({
@@ -323,7 +360,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                         <input
                           type="number"
                           min="0"
-                          max="6"
+                          max={getMaxForColor('r')}
                           placeholder="Min"
                           value={editedItem.filters.socketFilters.r.min || ''}
                           onChange={(e) => handleSocketFilterChange('r', 'min', e.target.value)}
@@ -344,7 +381,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                         <input
                           type="number"
                           min="0"
-                          max="6"
+                          max={getMaxForColor('g')}
                           placeholder="Min"
                           value={editedItem.filters.socketFilters.g.min || ''}
                           onChange={(e) => handleSocketFilterChange('g', 'min', e.target.value)}
@@ -365,7 +402,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                         <input
                           type="number"
                           min="0"
-                          max="6"
+                          max={getMaxForColor('b')}
                           placeholder="Min"
                           value={editedItem.filters.socketFilters.b.min || ''}
                           onChange={(e) => handleSocketFilterChange('b', 'min', e.target.value)}
@@ -386,7 +423,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                         <input
                           type="number"
                           min="0"
-                          max="6"
+                          max={getMaxForColor('w')}
                           placeholder="Min"
                           value={editedItem.filters.socketFilters.w.min || ''}
                           onChange={(e) => handleSocketFilterChange('w', 'min', e.target.value)}
@@ -410,7 +447,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                       <input
                         type="number"
                         min="1"
-                        max="6"
+                        max={item.socketInfo.totalSockets}
                         placeholder="Min"
                         value={editedItem.filters.socketFilters.links.min || ''}
                         onChange={(e) => handleSocketFilterChange('links', 'min', e.target.value)}
