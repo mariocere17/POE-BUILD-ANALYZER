@@ -211,70 +211,57 @@ Users could paste a PoE1 build while having PoE2 selected (or vice versa), causi
 
 ### Solution
 
-Implemented automatic game detection from the PoB XML:
+Implemented automatic game detection from the PoB XML using **ascendancy names only** (class names like Ranger/Witch exist in both games).
 
-#### Detection Methods (in priority order)
+#### Ascendancy Lists
 
-1. **Class Name**: Check `<Build className="...">` or `<Spec className="...">`
-   - PoE1 exclusive: Marauder, Duelist, Templar, Shadow, Scion
-   - PoE2 exclusive: Monk, Mercenary, Sorceress, Warrior, Huntress
-   - Shared: Ranger, Witch (use other methods)
+**PoE1 Ascendancies:**
+- Marauder: Juggernaut, Berserker, Chieftain
+- Duelist: Slayer, Gladiator, Champion
+- Shadow: Assassin, Saboteur, Trickster
+- Templar: Inquisitor, Hierophant, Guardian
+- Witch: Necromancer, Occultist, Elementalist
+- Ranger: Raider (Deadeye/Pathfinder shared)
+- Scion: Ascendant
 
-2. **Ascendancy Name**: More specific detection
-   - PoE2: Invoker, Stormweaver, Chronomancer, Blood Mage, Infernalist, Titan, etc.
-   - PoE1: Juggernaut, Berserker, Slayer, Assassin, Necromancer, etc.
+**PoE2 Ascendancies:**
+- Mercenary: Witchhunter, Gemling Legionnaire, Tactician
+- Monk: Invoker, Acolyte of Chayula
+- Sorceress: Stormweaver, Chronomancer, Disciple of Varashta
+- Warrior: Warbringer, Titan, Smith of Kitava
+- Witch: Blood Mage, Infernalist, Lich
+- Huntress: Amazon, Ritualist
+- Druid: Oracle, Shaman
+- Ranger: (Deadeye/Pathfinder shared - use item fallback)
 
-3. **Item Characteristics** (fallback)
-   - Charms in build → PoE2
-   - RGBW colored sockets → PoE1
+#### Fallback Detection
+- Charms in build → PoE2
+- RGBW colored sockets → PoE1
 
-#### Implementation
+#### Notification
 
-```javascript
-// pobParser.js - returns both items and detected game
-const detectGameFromXml = (xmlDoc, items = []) => {
-  // Check class name
-  const className = buildElement?.getAttribute('className')?.toLowerCase();
-  if (POE1_CLASSES.includes(className)) return 'poe1';
-  if (POE2_CLASSES.includes(className)) return 'poe2';
+When game is auto-switched, an amber notification banner appears:
+> "Build detected for Path of Exile 2. Switched from Path of Exile 1."
 
-  // Check ascendancy, then items...
-  return null; // Unable to detect
-};
-
-export const parsePoB = async (code) => {
-  // ... parsing logic ...
-  const detectedGame = detectGameFromXml(xmlDoc, parsedItems);
-  return { items: parsedItems, detectedGame };
-};
-```
-
-```javascript
-// useBuildAnalyzer.js - auto-switch on mismatch
-const { items: parsedItems, detectedGame } = await parsePoB(pobCode);
-
-if (detectedGame && detectedGame !== game) {
-  console.log(`[POB] Detected game: ${detectedGame}, switching from ${game}`);
-  setGame(detectedGame);
-  setLeague(LEAGUES[detectedGame][0].value);
-  statCacheRef.current = null; // Clear stat cache
-}
-```
+User can dismiss with X button.
 
 ### Files Modified
 
 | File | Changes |
 |------|---------|
-| `src/services/pobParser.js` | Added `detectGameFromXml()`, class lists, return `{items, detectedGame}` |
-| `src/hooks/useBuildAnalyzer.js` | Handle new return format, auto-switch game on mismatch |
+| `src/services/pobParser.js` | Ascendancy-only detection, complete PoE2 ascendancy list |
+| `src/hooks/useBuildAnalyzer.js` | Added `gameSwitch` state and `dismissGameSwitch` action |
+| `src/App.jsx` | Added notification banner component |
+| `src/i18n/LanguageContext.jsx` | Added template interpolation support (`{{param}}`) |
+| `src/i18n/translations.js` | Added `notifications.gameSwitched` (EN/ES) |
 
 ### Behavior
 
 | Scenario | Result |
 |----------|--------|
-| PoE2 selected, paste PoE1 build | Auto-switch to PoE1, update league |
-| PoE1 selected, paste PoE2 build | Auto-switch to PoE2, update league |
-| Unable to detect game | Keep user's selection |
+| PoE2 selected, paste PoE1 build | Auto-switch to PoE1, show notification |
+| PoE1 selected, paste PoE2 build | Auto-switch to PoE2, show notification |
+| Unable to detect game | Keep user's selection, no notification |
 
 ---
 
