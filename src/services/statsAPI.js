@@ -120,6 +120,16 @@ const DIRECT_STAT_MAPPINGS = {
   'Notable Passive Skills in Radius also grant #% increased Critical Strike Chance for Spells': 'explicit.stat_2704905000',
   // Small Passive Skills in Radius grants
   'Small Passive Skills in Radius also grant #% increased maximum Energy Shield': 'explicit.stat_3665922113',
+  'Small Passive Skills in Radius also grant #% increased Cold Damage': 'explicit.stat_2442527254',
+  // Notable Passive Skills - Critical Damage Bonus (different from Critical Hit Chance)
+  'Notable Passive Skills in Radius also grant #% increased Critical Damage Bonus': 'explicit.stat_2359002191',
+  // Notable Passive Skills - Area of Effect of Curses
+  'Notable Passive Skills in Radius also grant #% increased Area of Effect of Curses': 'explicit.stat_3859848445',
+
+  // =========================================================================
+  // Sapphire Jewel stats (PoE2) - Spell/Triggered mods
+  // =========================================================================
+  'Triggered Spells deal #% increased Spell Damage': 'explicit.stat_3067892458',
 
   // =========================================================================
   // The Vertex unique item stats (PoE2)
@@ -140,6 +150,140 @@ const DIRECT_STAT_MAPPINGS = {
   'Gain #% of Damage as Extra Chaos Damage': 'explicit.stat_3398787959',
   // Critical Spell Damage Bonus (different from regular Critical Damage Bonus)
   '#% increased Critical Spell Damage Bonus': 'explicit.stat_274716455',
+};
+
+/**
+ * Megalomaniac jewel "Allocates X" passive mappings
+ * Format: enchant.stat_2954116742|SUFFIX where SUFFIX is unique per passive
+ * These are parsed as implicits by PoB but are enchants in the trade API
+ */
+const ALLOCATES_PASSIVE_MAPPINGS = {
+  // Movement & Defense
+  'Allocates Momentum': 'enchant.stat_2954116742|63579',
+  'Allocates Defensive Reflexes': 'enchant.stat_2954116742|45612',
+  'Allocates Grit': 'enchant.stat_2954116742|20416',
+  'Allocates Self Immolation': 'enchant.stat_2954116742|23630',
+  // Critical & Accuracy
+  'Allocates Pressure Points': 'enchant.stat_2954116742|28329',
+  'Allocates Locked On': 'enchant.stat_2954116742|56999',
+  'Allocates Careful Aim': 'enchant.stat_2954116742|50795',
+  // Melee & Attack
+  'Allocates Heavy Contact': 'enchant.stat_2954116742|56997',
+  'Allocates In Your Face': 'enchant.stat_2954116742|57379',
+  'Allocates Focused Thrust': 'enchant.stat_2954116742|9227',
+  'Allocates Mass Hysteria': 'enchant.stat_2954116742|27108',
+  // Spell & Cast
+  'Allocates Equilibrium': 'enchant.stat_2954116742|61404',
+  'Allocates Hastening Barrier': 'enchant.stat_2954116742|44293',
+  'Allocates Evocational Practitioner': 'enchant.stat_2954116742|41753',
+  // Elemental & Ailments
+  'Allocates Infernal Limit': 'enchant.stat_2954116742|61354',
+  'Allocates Inescapable Cold': 'enchant.stat_2954116742|47270',
+  'Allocates Coursing Energy': 'enchant.stat_2954116742|50687',
+  'Allocates Exploit the Elements': 'enchant.stat_2954116742|48581',
+  // Minion & Totem
+  'Allocates Necrotic Touch': 'enchant.stat_2954116742|11376',
+  'Allocates Bringer of Order': 'enchant.stat_2954116742|48565',
+  'Allocates Hardened Wood': 'enchant.stat_2954116742|24438',
+  // Chaos & Curse
+  'Allocates Void': 'enchant.stat_2954116742|3492',
+  // Mana & Resources
+  'Allocates Raw Mana': 'enchant.stat_2954116742|3567',
+  // Damage & Combat
+  'Allocates Aggravation': 'enchant.stat_2954116742|6655',
+  'Allocates In the Thick of It': 'enchant.stat_2954116742|35028',
+  'Allocates Finesse': 'enchant.stat_2954116742|38969',
+  // Elemental
+  'Allocates Spirit of the Wyvern': 'enchant.stat_2954116742|26104',
+  'Allocates Endless Blizzard': 'enchant.stat_2954116742|19955',
+  'Allocates Infusion of Power': 'enchant.stat_2954116742|59387',
+  // Life & Defence
+  'Allocates Boon of the Beast': 'enchant.stat_2954116742|52618',
+  'Allocates Behemoth': 'enchant.stat_2954116742|5642',
+  // Intelligence & Crit
+  'Allocates Aspiring Genius': 'enchant.stat_2954116742|27388',
+  // Minion & Flesh
+  'Allocates Fleshcrafting': 'enchant.stat_2954116742|21164',
+  'Allocates Left Hand of Darkness': 'enchant.stat_2954116742|19644',
+  // Attack Speed & Melee
+  'Allocates Stimulants': 'enchant.stat_2954116742|7163',
+  'Allocates Viciousness': 'enchant.stat_2954116742|65193',
+  'Allocates Blade Flurry': 'enchant.stat_2954116742|2394',
+  'Allocates Agile Succession': 'enchant.stat_2954116742|56493',
+  'Allocates Whirling Assault': 'enchant.stat_2954116742|37514',
+  // Physical & Ailments
+  'Allocates Hidden Barb': 'enchant.stat_2954116742|45777',
+  'Allocates Pin and Run': 'enchant.stat_2954116742|60083',
+  // Fire
+  'Allocates Burn Away': 'enchant.stat_2954116742|53294',
+  // Lightning
+  'Allocates Electric Blood': 'enchant.stat_2954116742|56988',
+  'Allocates Pure Power': 'enchant.stat_2954116742|28975',
+  // Attributes & Gems
+  'Allocates Gem Enthusiast': 'enchant.stat_2954116742|32976',
+  // Life & Leech
+  'Allocates Fast Metabolism': 'enchant.stat_2954116742|8827',
+  // Area & Fissures
+  'Allocates Splitting Ground': 'enchant.stat_2954116742|20251',
+  // Critical
+  'Allocates Cooked': 'enchant.stat_2954116742|56776',
+  // Quiver & Bow
+  'Allocates Master Fletching': 'enchant.stat_2954116742|30341',
+  // Cold Penetration & Exposure
+  'Allocates Exposed to the Cosmos': 'enchant.stat_2954116742|55835',
+  // Hybrid Defence
+  'Allocates Ruinic Helm': 'enchant.stat_2954116742|18959',
+  'Allocates Polished Iron': 'enchant.stat_2954116742|27950',
+  // Spell & Attack Combo
+  'Allocates Enhancing Attacks': 'enchant.stat_2954116742|56237',
+  // Projectile
+  'Allocates Swift Flight': 'enchant.stat_2954116742|56714',
+  // Curse
+  'Allocates Master of Hexes': 'enchant.stat_2954116742|40345',
+  // Charges
+  'Allocates Overflowing Power': 'enchant.stat_2954116742|65204',
+  // Elemental Ailments
+  'Allocates Exploit': 'enchant.stat_2954116742|39050',
+  'Allocates Adaptive Skin': 'enchant.stat_2954116742|43250',
+  // Totem
+  'Allocates Ancestral Conduits': 'enchant.stat_2954116742|51820',
+  // Shield & Block
+  'Allocates Wide Barrier': 'enchant.stat_2954116742|46384',
+  // Rage & Fire
+  'Allocates Ichlotl\'s Inferno': 'enchant.stat_2954116742|32932',
+  // Minion Duration
+  'Allocates Expendable Army': 'enchant.stat_2954116742|47420',
+  // Two-Handed & Accuracy
+  'Allocates Curved Weapon': 'enchant.stat_2954116742|13708',
+  // Link Skills
+  'Allocates Spirit Bonds': 'enchant.stat_2954116742|57097',
+  // Hazard
+  'Allocates Widespread Coverage': 'enchant.stat_2954116742|65256',
+  // Crit & Intelligence
+  'Allocates Heartstopping': 'enchant.stat_2954116742|38537',
+  'Allocates Direct Approach': 'enchant.stat_2954116742|24483',
+  // Area Attack & Stun
+  'Allocates Impact Force': 'enchant.stat_2954116742|64443',
+  // Armour Break & Physical
+  'Allocates Stylebender': 'enchant.stat_2954116742|60138',
+  // Cold Penetration
+  'Allocates Snowpiercer': 'enchant.stat_2954116742|9421',
+  // Herald
+  'Allocates Agonising Calamity': 'enchant.stat_2954116742|43088',
+  // Minion & Block
+  'Allocates Holy Protector': 'enchant.stat_2954116742|23078',
+  // Energy Shield & Armour
+  'Allocates Reinforced Barrier': 'enchant.stat_2954116742|50062',
+  // Companion
+  'Allocates Nourishing Ally': 'enchant.stat_2954116742|37266',
+  // Slam
+  'Allocates Aftershocks': 'enchant.stat_2954116742|50253',
+  // Deflect & Evasion
+  'Allocates Enduring Deflection': 'enchant.stat_2954116742|42103',
+  'Allocates The Wild Cat': 'enchant.stat_2954116742|22811',
+  // Poison
+  'Allocates Low Tolerance': 'enchant.stat_2954116742|42959',
+  // Add more passives as needed - format: 'Allocates PASSIVE_NAME': 'enchant.stat_2954116742|SUFFIX'
 };
 
 // ============================================================================
@@ -591,7 +735,17 @@ export const findStatId = (stats, normalizedMod, modType) => {
     return null;
   }
 
-  // 1. Check direct mappings FIRST (for stats with known different IDs in PoE2)
+  // 1. Check "Allocates X" passive mappings (Megalomaniac jewel)
+  // These are parsed as implicits by PoB but use enchant stat IDs in trade API
+  if (normalizedMod.startsWith('Allocates ') && ALLOCATES_PASSIVE_MAPPINGS[normalizedMod]) {
+    const allocatesId = ALLOCATES_PASSIVE_MAPPINGS[normalizedMod];
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[STATS] Allocates passive mapping: "${normalizedMod}" -> ${allocatesId}`);
+    }
+    return allocatesId;
+  }
+
+  // 2. Check direct mappings FIRST (for stats with known different IDs in PoE2)
   if (modType === 'explicit' && DIRECT_STAT_MAPPINGS[normalizedMod]) {
     const directId = DIRECT_STAT_MAPPINGS[normalizedMod];
     if (process.env.NODE_ENV === 'development') {
@@ -634,6 +788,12 @@ export const validateStatId = (stats, statId) => {
   // Check if the stat ID is in our direct mappings (these are valid but not in the API)
   const directMappingIds = Object.values(DIRECT_STAT_MAPPINGS);
   if (directMappingIds.includes(statId)) {
+    return true;
+  }
+
+  // Check if the stat ID is in our Allocates passive mappings (Megalomaniac)
+  const allocatesMappingIds = Object.values(ALLOCATES_PASSIVE_MAPPINGS);
+  if (allocatesMappingIds.includes(statId)) {
     return true;
   }
 
