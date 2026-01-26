@@ -203,6 +203,81 @@ Added `game` prop to `EditItemModal` and conditioned socket section visibility:
 
 ---
 
+## Session Work (2026-01-26) - Auto-Detect Game from PoB Code
+
+### Problem
+
+Users could paste a PoE1 build while having PoE2 selected (or vice versa), causing incorrect trade URLs and search failures.
+
+### Solution
+
+Implemented automatic game detection from the PoB XML:
+
+#### Detection Methods (in priority order)
+
+1. **Class Name**: Check `<Build className="...">` or `<Spec className="...">`
+   - PoE1 exclusive: Marauder, Duelist, Templar, Shadow, Scion
+   - PoE2 exclusive: Monk, Mercenary, Sorceress, Warrior, Huntress
+   - Shared: Ranger, Witch (use other methods)
+
+2. **Ascendancy Name**: More specific detection
+   - PoE2: Invoker, Stormweaver, Chronomancer, Blood Mage, Infernalist, Titan, etc.
+   - PoE1: Juggernaut, Berserker, Slayer, Assassin, Necromancer, etc.
+
+3. **Item Characteristics** (fallback)
+   - Charms in build → PoE2
+   - RGBW colored sockets → PoE1
+
+#### Implementation
+
+```javascript
+// pobParser.js - returns both items and detected game
+const detectGameFromXml = (xmlDoc, items = []) => {
+  // Check class name
+  const className = buildElement?.getAttribute('className')?.toLowerCase();
+  if (POE1_CLASSES.includes(className)) return 'poe1';
+  if (POE2_CLASSES.includes(className)) return 'poe2';
+
+  // Check ascendancy, then items...
+  return null; // Unable to detect
+};
+
+export const parsePoB = async (code) => {
+  // ... parsing logic ...
+  const detectedGame = detectGameFromXml(xmlDoc, parsedItems);
+  return { items: parsedItems, detectedGame };
+};
+```
+
+```javascript
+// useBuildAnalyzer.js - auto-switch on mismatch
+const { items: parsedItems, detectedGame } = await parsePoB(pobCode);
+
+if (detectedGame && detectedGame !== game) {
+  console.log(`[POB] Detected game: ${detectedGame}, switching from ${game}`);
+  setGame(detectedGame);
+  setLeague(LEAGUES[detectedGame][0].value);
+  statCacheRef.current = null; // Clear stat cache
+}
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/pobParser.js` | Added `detectGameFromXml()`, class lists, return `{items, detectedGame}` |
+| `src/hooks/useBuildAnalyzer.js` | Handle new return format, auto-switch game on mismatch |
+
+### Behavior
+
+| Scenario | Result |
+|----------|--------|
+| PoE2 selected, paste PoE1 build | Auto-switch to PoE1, update league |
+| PoE1 selected, paste PoE2 build | Auto-switch to PoE2, update league |
+| Unable to detect game | Keep user's selection |
+
+---
+
 ## Session Work (2026-01-21) - Item Category Filtering
 
 ### New Feature: Item Category Filter
