@@ -129,6 +129,15 @@ const DIRECT_STAT_MAPPINGS = {
   '+# to Level of all Skills': 'explicit.stat_4283407333',
   '# to Level of all Skills': 'explicit.stat_4283407333',
   '#% increased Mana Cost Efficiency': 'explicit.stat_4101445926',
+
+  // =========================================================================
+  // Heart of the Well unique jewel stats (PoE2) - "Gain X% of Damage as Extra Y"
+  // These are different from "Physical Damage as Extra Y" - they apply to ALL damage
+  // =========================================================================
+  'Gain #% of Damage as Extra Fire Damage': 'explicit.stat_3015669065',
+  'Gain #% of Damage as Extra Lightning Damage': 'explicit.stat_3278136794',
+  'Gain #% of Damage as Extra Cold Damage': 'explicit.stat_2813449498',
+  'Gain #% of Damage as Extra Chaos Damage': 'explicit.stat_730877817',
 };
 
 // ============================================================================
