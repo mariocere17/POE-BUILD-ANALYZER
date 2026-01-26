@@ -99,6 +99,74 @@ Both PoE1 and PoE2 support the same trade mode options:
 
 ---
 
+## Session Work (2026-01-26) - Socket Filter Sum Validation
+
+### Problem
+
+Socket color filters allowed invalid configurations. Users could set 4 red + 4 green + 4 blue + 4 white sockets on a 4-socket item, which is impossible.
+
+### Root Cause
+
+The `max` attribute on inputs was set to `item.socketInfo.totalSockets` for each color independently, without considering the sum of all enabled colors.
+
+### Solution
+
+Implemented dynamic max calculation that considers other enabled socket colors:
+
+```javascript
+// Calculate max available sockets for a color based on other enabled colors
+const getMaxForColor = (color) => {
+  if (!hasSocketInfo || !editedItem.filters.socketFilters) return 0;
+  const maxTotal = item.socketInfo.totalSockets;
+  const colors = ['r', 'g', 'b', 'w'];
+  const otherColorsSum = colors
+    .filter(c => c !== color)
+    .reduce((sum, c) => {
+      const filter = editedItem.filters.socketFilters[c];
+      return sum + (filter.enabled && filter.min ? filter.min : 0);
+    }, 0);
+  return Math.max(0, maxTotal - otherColorsSum);
+};
+```
+
+Handler also clamps values when user types directly:
+```javascript
+// Socket colors: sum of all enabled colors cannot exceed totalSockets
+const otherColorsSum = colors
+  .filter(c => c !== socketType)
+  .reduce((sum, c) => {
+    const filter = editedItem.filters.socketFilters[c];
+    return sum + (filter.enabled && filter.min ? filter.min : 0);
+  }, 0);
+
+const maxForThisColor = Math.max(0, maxTotal - otherColorsSum);
+parsedValue = Math.max(0, Math.min(parsedValue, maxForThisColor));
+```
+
+### Behavior
+
+| Item Sockets | G enabled = 3 | Max for R, B, W |
+|--------------|---------------|-----------------|
+| 4 | ✓ | 1 each |
+| 6 | ✓ | 3 each |
+
+| Item Sockets | G = 2, B = 2 enabled | Max for R, W |
+|--------------|----------------------|--------------|
+| 4 | ✓ | 0 each |
+| 6 | ✓ | 2 each |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/components/BuildAnalyzer/EditItemModal.jsx` | Added `getMaxForColor()` helper, updated handler with sum validation, dynamic `max` attributes |
+
+### Note
+
+Links filter still uses `totalSockets` as max because link count is independent of color distribution.
+
+---
+
 ## Session Work (2026-01-21) - Item Category Filtering
 
 ### New Feature: Item Category Filter
