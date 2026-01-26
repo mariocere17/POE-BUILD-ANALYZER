@@ -295,6 +295,35 @@ https://www.poe-vault.com/guides/legacy-of-phrecia-ascendancy-overview
 
 ---
 
+## Session Work (2026-01-26) - Heart of the Well Jewel Stat Mappings
+
+### Problem
+
+The unique jewel "Heart of the Well" has mods like `Gain 15% of Damage as Extra Fire Damage` which were incorrectly fuzzy-matching to `Gain #% of Physical Damage as Extra Fire Damage` (0.89 similarity score).
+
+These are **different stats**:
+- `Physical Damage as Extra X` - Only converts physical damage
+- `Damage as Extra X` - Converts ALL damage types
+
+### Solution
+
+Added direct mappings for "Gain #% of Damage as Extra X" stats:
+
+| Mod Text | Stat ID |
+|----------|---------|
+| Gain #% of Damage as Extra Fire Damage | `explicit.stat_3015669065` |
+| Gain #% of Damage as Extra Lightning Damage | `explicit.stat_3278136794` |
+| Gain #% of Damage as Extra Cold Damage | `explicit.stat_2813449498` |
+| Gain #% of Damage as Extra Chaos Damage | `explicit.stat_730877817` |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/statsAPI.js` | Added 4 new entries to `DIRECT_STAT_MAPPINGS` |
+
+---
+
 ## Session Work (2026-01-21) - Item Category Filtering
 
 ### New Feature: Item Category Filter
