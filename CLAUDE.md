@@ -265,6 +265,36 @@ User can dismiss with X button.
 
 ---
 
+## Session Work (2026-01-26) - Legacy of Phrecia Event Ascendancies
+
+### Context
+
+Added 19 new PoE1 ascendancies for the upcoming Legacy of Phrecia event to the game detection system.
+
+### Ascendancies Added
+
+| Class | Ascendancies |
+|-------|--------------|
+| **Ranger** | Daughter of Oshabi, Whisperer, Wildspeaker |
+| **Marauder** | Antiquarian, Behemoth, Ancestral Commander |
+| **Shadow** | Surfcaster, Servant of Arakaali, Blind Prophet |
+| **Witch** | Harbinger, Herald, Bog Shaman |
+| **Duelist** | Gambler, Paladin, Aristocrat |
+| **Templar** | Architect of Chaos, Polytheist, Puppeteer |
+| **Scion** | Scavenger |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/pobParser.js` | Added 19 Legacy of Phrecia ascendancies to `POE1_ASCENDANCIES` array |
+
+### Source
+
+https://www.poe-vault.com/guides/legacy-of-phrecia-ascendancy-overview
+
+---
+
 ## Session Work (2026-01-21) - Item Category Filtering
 
 ### New Feature: Item Category Filter

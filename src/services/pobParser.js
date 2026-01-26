@@ -79,7 +79,22 @@ const POE1_ASCENDANCIES = [
   // Ranger (Raider is unique to PoE1)
   'raider',
   // Scion
-  'ascendant'
+  'ascendant',
+  // === Legacy of Phrecia Event Ascendancies ===
+  // Ranger
+  'daughter of oshabi', 'whisperer', 'wildspeaker',
+  // Marauder
+  'antiquarian', 'behemoth', 'ancestral commander',
+  // Shadow
+  'surfcaster', 'servant of arakaali', 'blind prophet',
+  // Witch
+  'harbinger', 'herald', 'bog shaman',
+  // Duelist
+  'gambler', 'paladin', 'aristocrat',
+  // Templar
+  'architect of chaos', 'polytheist', 'puppeteer',
+  // Scion
+  'scavenger'
 ];
 
 const POE2_ASCENDANCIES = [
