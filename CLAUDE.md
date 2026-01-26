@@ -165,6 +165,42 @@ parsedValue = Math.max(0, Math.min(parsedValue, maxForThisColor));
 
 Links filter still uses `totalSockets` as max because link count is independent of color distribution.
 
+**Important:** Socket filters only appear for PoE1. PoE2 has a different itemization system without colored sockets/links.
+
+---
+
+## Session Work (2026-01-26) - Socket Filters PoE1 Only
+
+### Problem
+
+Socket Filters section was appearing for PoE2 items, but PoE2 doesn't have the same colored socket/link system as PoE1.
+
+### Solution
+
+Added `game` prop to `EditItemModal` and conditioned socket section visibility:
+
+```javascript
+// App.jsx - pass game to modal
+<EditItemModal
+  item={editingItem}
+  game={game}
+  onClose={() => setEditingItem(null)}
+  onSave={handleSaveItem}
+/>
+
+// EditItemModal.jsx - only show for PoE1
+{game === 'poe1' && hasSocketInfo && editedItem.filters.socketFilters && (
+  // Socket filters section...
+)}
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/App.jsx` | Pass `game` prop to EditItemModal |
+| `src/components/BuildAnalyzer/EditItemModal.jsx` | Add `game` to props, condition socket section |
+
 ---
 
 ## Session Work (2026-01-21) - Item Category Filtering
