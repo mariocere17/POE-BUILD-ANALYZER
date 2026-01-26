@@ -24,6 +24,7 @@ export const useBuildAnalyzer = () => {
   const [league, setLeague] = useState(LEAGUES[DEV_DEFAULT_GAME][0].value);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [sellerStatus, setSellerStatus] = useState(DEFAULT_TRADE_MODE);
+  const [gameSwitch, setGameSwitch] = useState(null); // { from: 'poe1', to: 'poe2' } when auto-switched
 
   // Use ref for stat cache to avoid re-creating callbacks when cache updates
   const statCacheRef = useRef(null);
@@ -43,13 +44,15 @@ export const useBuildAnalyzer = () => {
   const handleParsePoB = useCallback(async () => {
     setLoading(true);
     setError('');
+    setGameSwitch(null); // Clear previous notification
 
     try {
       const { items: parsedItems, detectedGame } = await parsePoB(pobCode);
 
-      // If game detected and different from selected, auto-switch
+      // If game detected and different from selected, auto-switch and notify
       if (detectedGame && detectedGame !== game) {
         console.log(`[POB] Detected game: ${detectedGame}, switching from ${game}`);
+        setGameSwitch({ from: game, to: detectedGame });
         setGame(detectedGame);
         setLeague(LEAGUES[detectedGame][0].value);
         // Clear stat cache when switching games
@@ -99,6 +102,11 @@ export const useBuildAnalyzer = () => {
     setGame(newGame);
   }, []);
 
+  // Dismiss game switch notification
+  const dismissGameSwitch = useCallback(() => {
+    setGameSwitch(null);
+  }, []);
+
   return {
     // State
     pobCode,
@@ -110,6 +118,7 @@ export const useBuildAnalyzer = () => {
     league,
     copiedIndex,
     sellerStatus,
+    gameSwitch,
 
     // Setters
     setPobCode,
@@ -123,6 +132,7 @@ export const useBuildAnalyzer = () => {
     handleCopyToClipboard,
     handleOpenTradeURL,
     handleSaveItem,
-    handleGameChange
+    handleGameChange,
+    dismissGameSwitch
   };
 };

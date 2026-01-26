@@ -198,6 +198,11 @@ Examples:
       inPersonOnly: 'In Person Only',
       onlineOnly: 'Online Only',
       any: 'Any'
+    },
+
+    // Notifications
+    notifications: {
+      gameSwitched: 'Build detected for {{to}}. Switched from {{from}}.'
     }
   },
 
@@ -399,6 +404,11 @@ Ejemplos:
       inPersonOnly: 'Solo En Persona',
       onlineOnly: 'Solo Online',
       any: 'Cualquiera'
+    },
+
+    // Notifications
+    notifications: {
+      gameSwitched: 'Build detectado para {{to}}. Cambiado desde {{from}}.'
     }
   }
 };

@@ -9,7 +9,7 @@ import EditItemModal from './components/BuildAnalyzer/EditItemModal';
 import ReportModal from './components/ReportModal';
 import CurrencyConverter from './components/PoeNinja/CurrencyConverter';
 import { poe2CurrencyPairs, poe1CurrencyPairs } from './config/currencyPairs';
-import { Bug } from 'lucide-react';
+import { Bug, X, AlertTriangle } from 'lucide-react';
 import LanguageSelector from './components/Layout/LanguageSelector';
 import { useLanguage } from './i18n/LanguageContext';
 
@@ -26,6 +26,7 @@ const PoEBuildAnalyzer = () => {
     league,
     copiedIndex,
     sellerStatus,
+    gameSwitch,
     setPobCode,
     setEditingItem,
     setLeague,
@@ -34,13 +35,36 @@ const PoEBuildAnalyzer = () => {
     handleCopyToClipboard,
     handleOpenTradeURL,
     handleSaveItem,
-    handleGameChange
+    handleGameChange,
+    dismissGameSwitch
   } = useBuildAnalyzer();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white p-6 flex flex-col">
       <div className="max-w-7xl mx-auto flex-1 w-full">
         <Header />
+
+        {/* Game Switch Notification */}
+        {gameSwitch && (
+          <div className="mb-4 bg-amber-500/20 border border-amber-500/50 rounded-lg p-4 flex items-center justify-between animate-fade-in">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="text-amber-400 flex-shrink-0" size={24} />
+              <p className="text-amber-200">
+                {t('notifications.gameSwitched', {
+                  from: gameSwitch.from === 'poe1' ? 'Path of Exile 1' : 'Path of Exile 2',
+                  to: gameSwitch.to === 'poe1' ? 'Path of Exile 1' : 'Path of Exile 2'
+                })}
+              </p>
+            </div>
+            <button
+              onClick={dismissGameSwitch}
+              className="text-amber-400 hover:text-amber-300 transition-colors p-1"
+              aria-label="Dismiss"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        )}
 
         <BuildForm
           pobCode={pobCode}

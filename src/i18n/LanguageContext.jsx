@@ -35,7 +35,7 @@ export const LanguageProvider = ({ children }) => {
     }
   };
 
-  const t = (key) => {
+  const t = (key, params = {}) => {
     const keys = key.split('.');
     let value = translations[language];
 
@@ -56,7 +56,16 @@ export const LanguageProvider = ({ children }) => {
       }
     }
 
-    return value || key;
+    let result = value || key;
+
+    // Replace {{param}} with actual values
+    if (typeof result === 'string' && Object.keys(params).length > 0) {
+      for (const [param, paramValue] of Object.entries(params)) {
+        result = result.replace(new RegExp(`\\{\\{${param}\\}\\}`, 'g'), paramValue);
+      }
+    }
+
+    return result;
   };
 
   return (

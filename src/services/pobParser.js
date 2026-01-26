@@ -63,10 +63,41 @@ const getPobbCode = async (input) => {
   return trimmedInput;
 };
 
-// Class names for game detection
-const POE1_CLASSES = ['marauder', 'duelist', 'templar', 'shadow', 'scion'];
-const POE2_CLASSES = ['monk', 'mercenary', 'sorceress', 'warrior', 'huntress'];
-// Note: 'ranger' and 'witch' exist in both games
+// Ascendancy names for game detection (unique to each game)
+// Note: Deadeye and Pathfinder exist in both games, so they're excluded
+const POE1_ASCENDANCIES = [
+  // Marauder
+  'juggernaut', 'berserker', 'chieftain',
+  // Duelist
+  'slayer', 'gladiator', 'champion',
+  // Shadow
+  'assassin', 'saboteur', 'trickster',
+  // Templar
+  'inquisitor', 'hierophant', 'guardian',
+  // Witch (PoE1 versions)
+  'necromancer', 'occultist', 'elementalist',
+  // Ranger (Raider is unique to PoE1)
+  'raider',
+  // Scion
+  'ascendant'
+];
+
+const POE2_ASCENDANCIES = [
+  // Mercenary
+  'witchhunter', 'gemling legionnaire', 'tactician',
+  // Monk
+  'invoker', 'acolyte of chayula',
+  // Sorceress
+  'stormweaver', 'chronomancer', 'disciple of varashta',
+  // Warrior
+  'warbringer', 'titan', 'smith of kitava',
+  // Witch (PoE2 versions)
+  'blood mage', 'infernalist', 'lich',
+  // Huntress
+  'amazon', 'ritualist',
+  // Druid
+  'oracle', 'shaman'
+];
 
 /**
  * Detects the game (poe1 or poe2) from the XML document
@@ -75,47 +106,26 @@ const POE2_CLASSES = ['monk', 'mercenary', 'sorceress', 'warrior', 'huntress'];
  * @returns {string|null} 'poe1', 'poe2', or null if unable to detect
  */
 const detectGameFromXml = (xmlDoc, items = []) => {
-  // Method 1: Check class name from Build or Spec element
   const buildElement = xmlDoc.querySelector('Build');
   const specElement = xmlDoc.querySelector('Spec');
 
-  const className = (
-    buildElement?.getAttribute('className') ||
-    specElement?.getAttribute('className') ||
-    ''
-  ).toLowerCase();
-
-  if (className) {
-    if (POE1_CLASSES.includes(className)) {
-      return 'poe1';
-    }
-    if (POE2_CLASSES.includes(className)) {
-      return 'poe2';
-    }
-  }
-
-  // Method 2: Check ascendancy names (more specific)
+  // Primary method: Check ascendancy name (most reliable)
   const ascendancy = (
     buildElement?.getAttribute('ascendClassName') ||
     specElement?.getAttribute('ascendClassName') ||
     ''
   ).toLowerCase();
 
-  // PoE2 specific ascendancies
-  const poe2Ascendancies = ['invoker', 'stormweaver', 'chronomancer', 'blood mage', 'infernalist', 'titan', 'warbringer', 'gemling legionnaire', 'witchhunter', 'deadeye', 'pathfinder'];
-  // PoE1 specific ascendancies
-  const poe1Ascendancies = ['juggernaut', 'berserker', 'chieftain', 'slayer', 'gladiator', 'champion', 'assassin', 'saboteur', 'trickster', 'inquisitor', 'hierophant', 'guardian', 'necromancer', 'occultist', 'elementalist', 'ascendant'];
-
-  if (ascendancy && poe2Ascendancies.some(a => ascendancy.includes(a))) {
-    return 'poe2';
-  }
-  if (ascendancy && poe1Ascendancies.some(a => ascendancy.includes(a))) {
-    return 'poe1';
+  if (ascendancy) {
+    if (POE2_ASCENDANCIES.some(a => ascendancy.includes(a))) {
+      return 'poe2';
+    }
+    if (POE1_ASCENDANCIES.some(a => ascendancy.includes(a))) {
+      return 'poe1';
+    }
   }
 
-  // Method 3: Check items for game-specific characteristics
-  // PoE2: Has charms, spirit attribute, runes (S sockets)
-  // PoE1: Has RGBW sockets with links
+  // Fallback: Check items for game-specific characteristics
   const hasCharms = items.some(item =>
     item.baseType?.toLowerCase().includes('charm') ||
     item.name?.toLowerCase().includes('charm')
