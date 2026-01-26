@@ -313,8 +313,11 @@ Added direct mappings for "Gain #% of Damage as Extra X" stats:
 |----------|---------|
 | Gain #% of Damage as Extra Fire Damage | `explicit.stat_3015669065` |
 | Gain #% of Damage as Extra Lightning Damage | `explicit.stat_3278136794` |
-| Gain #% of Damage as Extra Cold Damage | `explicit.stat_2813449498` |
-| Gain #% of Damage as Extra Chaos Damage | `explicit.stat_730877817` |
+| Gain #% of Damage as Extra Cold Damage | `explicit.stat_2505884597` |
+| Gain #% of Damage as Extra Chaos Damage | `explicit.stat_3398787959` |
+| #% increased Critical Spell Damage Bonus | `explicit.stat_274716455` |
+
+**Note:** Critical Spell Damage Bonus is different from Critical Damage Bonus (stat_3556824919).
 
 ### Files Modified
 
