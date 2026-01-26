@@ -321,10 +321,10 @@ export const parsePoB = async (code) => {
 
     // Parse socket info (PoE1 style: "R-R-B-G-G-G" where - means linked, space means unlinked)
     let socketInfo = null;
-    if (sockets && sockets.match(/^[RGBWS\- ]+$/i)) {
+    if (sockets && sockets.match(/^[RGBWS -]+$/i)) {
       // Count colors
       const colors = { r: 0, g: 0, b: 0, w: 0 };
-      const socketChars = sockets.replace(/[\- ]/g, '').toUpperCase();
+      const socketChars = sockets.replace(/[ -]/g, '').toUpperCase();
       for (const char of socketChars) {
         if (char === 'R') colors.r++;
         else if (char === 'G') colors.g++;
