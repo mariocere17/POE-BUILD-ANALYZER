@@ -327,6 +327,115 @@ Added direct mappings for "Gain #% of Damage as Extra X" stats:
 
 ---
 
+## Session Work (2026-01-26) - Megalomaniac Jewel Passive Mappings
+
+### Problem
+
+The unique jewel "Megalomaniac" has "Allocates X" mods that grant notable passive skills. These mods:
+- Are parsed as **implicits** by PoB
+- Use **enchant** stat IDs in the trade API
+- Have a special format: `enchant.stat_2954116742|SUFFIX` where SUFFIX is unique per passive
+
+Without direct mappings, these mods would not be found in trade searches.
+
+### Solution
+
+Created `ALLOCATES_PASSIVE_MAPPINGS` object with 78 passive mappings extracted from trade API responses.
+
+### Implementation
+
+**New object in `statsAPI.js`:**
+```javascript
+const ALLOCATES_PASSIVE_MAPPINGS = {
+  // Movement & Defense
+  'Allocates Momentum': 'enchant.stat_2954116742|63579',
+  'Allocates Defensive Reflexes': 'enchant.stat_2954116742|45612',
+  'Allocates Grit': 'enchant.stat_2954116742|20416',
+  // ... 75 more passives
+};
+```
+
+**Stat lookup integration:**
+```javascript
+// In findStatId() - check before other mappings
+if (normalizedMod.startsWith('Allocates ') && ALLOCATES_PASSIVE_MAPPINGS[normalizedMod]) {
+  return ALLOCATES_PASSIVE_MAPPINGS[normalizedMod];
+}
+```
+
+**Validation support:**
+```javascript
+// In validateStatId() - recognize Allocates stat IDs as valid
+const allocatesMappingIds = Object.values(ALLOCATES_PASSIVE_MAPPINGS);
+if (allocatesMappingIds.includes(statId)) {
+  return true;
+}
+```
+
+### Passives Mapped (78 total)
+
+| Category | Passives |
+|----------|----------|
+| Movement & Defense | Momentum, Defensive Reflexes, Grit, Self Immolation |
+| Critical & Accuracy | Pressure Points, Locked On, Careful Aim, Heartstopping, Direct Approach, Cooked |
+| Melee & Attack | Heavy Contact, In Your Face, Focused Thrust, Mass Hysteria, Viciousness, Blade Flurry, Agile Succession, Whirling Assault, Impact Force, Stylebender |
+| Spell & Cast | Equilibrium, Hastening Barrier, Evocational Practitioner, Enhancing Attacks |
+| Elemental | Infernal Limit, Inescapable Cold, Coursing Energy, Exploit the Elements, Spirit of the Wyvern, Endless Blizzard, Infusion of Power, Burn Away, Electric Blood, Pure Power, Exposed to the Cosmos, Snowpiercer, Agonising Calamity |
+| Minion & Totem | Necrotic Touch, Bringer of Order, Hardened Wood, Fleshcrafting, Left Hand of Darkness, Expendable Army, Holy Protector, Nourishing Ally |
+| Chaos & Curse | Void, Master of Hexes |
+| Life & Defence | Boon of the Beast, Behemoth, Fast Metabolism, Reinforced Barrier |
+| Charges | Overflowing Power |
+| Ailments | Exploit, Adaptive Skin, Hidden Barb, Pin and Run, Low Tolerance |
+| Totem & Shield | Ancestral Conduits, Wide Barrier |
+| Other | Gem Enthusiast, Splitting Ground, Master Fletching, Ruinic Helm, Polished Iron, Swift Flight, Curved Weapon, Spirit Bonds, Widespread Coverage, Aftershocks, Enduring Deflection, The Wild Cat, Ichlotl's Inferno, Stimulants, Aggravation, In the Thick of It, Finesse, Aspiring Genius |
+
+### How to Add More Passives
+
+1. Search for Megalomaniac on trade site with the desired passive
+2. Open browser DevTools → Network tab
+3. Find the search request and look at the response JSON
+4. Extract `suffix` from `notableProperties[].suffix` field
+5. Add to `ALLOCATES_PASSIVE_MAPPINGS`:
+```javascript
+'Allocates PASSIVE_NAME': 'enchant.stat_2954116742|SUFFIX',
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/statsAPI.js` | Added `ALLOCATES_PASSIVE_MAPPINGS` (78 entries), updated `findStatId()` and `validateStatId()` |
+
+---
+
+## Session Work (2026-01-26) - Time-Lost & Sapphire Jewel Stats
+
+### Problem
+
+Several Time-Lost and Sapphire jewel stats were fuzzy-matching to wrong stats:
+- "Notable Passive Skills in Radius also grant #% increased Critical Damage Bonus" → wrong stat
+- "Small Passive Skills in Radius also grant #% increased Cold Damage" → wrong stat
+- "Triggered Spells deal #% increased Spell Damage" → not found
+
+### Solution
+
+Added direct mappings extracted from trade API responses:
+
+| Mod Text | Stat ID |
+|----------|---------|
+| Small Passive Skills in Radius also grant #% increased Cold Damage | `explicit.stat_2442527254` |
+| Notable Passive Skills in Radius also grant #% increased Critical Damage Bonus | `explicit.stat_2359002191` |
+| Notable Passive Skills in Radius also grant #% increased Area of Effect of Curses | `explicit.stat_3859848445` |
+| Triggered Spells deal #% increased Spell Damage | `explicit.stat_3067892458` |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/statsAPI.js` | Added 4 entries to `DIRECT_STAT_MAPPINGS` |
+
+---
+
 ## Session Work (2026-01-21) - Item Category Filtering
 
 ### New Feature: Item Category Filter
