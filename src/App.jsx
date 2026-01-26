@@ -85,6 +85,7 @@ const PoEBuildAnalyzer = () => {
         {editingItem && (
           <EditItemModal
             item={editingItem}
+            game={game}
             onClose={() => setEditingItem(null)}
             onSave={handleSaveItem}
           />

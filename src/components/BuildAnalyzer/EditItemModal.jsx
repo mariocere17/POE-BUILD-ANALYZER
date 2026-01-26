@@ -4,7 +4,7 @@ import { X, ChevronDown } from 'lucide-react';
 import { RARITY_OPTIONS } from '../../utils/constants';
 import { useLanguage } from '../../i18n/LanguageContext';
 
-const EditItemModal = ({ item, onClose, onSave }) => {
+const EditItemModal = ({ item, game, onClose, onSave }) => {
   const { t } = useLanguage();
   // Deep copy filters and ensure fracturedModIndex, defenceFilters and socketFilters exist
   const [editedItem, setEditedItem] = useState(() => ({
@@ -329,7 +329,7 @@ const EditItemModal = ({ item, onClose, onSave }) => {
           )}
 
           {/* Socket Filters Section (PoE1 only) */}
-          {hasSocketInfo && editedItem.filters.socketFilters && (
+          {game === 'poe1' && hasSocketInfo && editedItem.filters.socketFilters && (
             <div>
               <button
                 type="button"
