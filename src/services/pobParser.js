@@ -63,10 +63,84 @@ const getPobbCode = async (input) => {
   return trimmedInput;
 };
 
+// Class names for game detection
+const POE1_CLASSES = ['marauder', 'duelist', 'templar', 'shadow', 'scion'];
+const POE2_CLASSES = ['monk', 'mercenary', 'sorceress', 'warrior', 'huntress'];
+// Note: 'ranger' and 'witch' exist in both games
+
+/**
+ * Detects the game (poe1 or poe2) from the XML document
+ * @param {Document} xmlDoc - Parsed XML document
+ * @param {Array} items - Parsed items (for fallback detection)
+ * @returns {string|null} 'poe1', 'poe2', or null if unable to detect
+ */
+const detectGameFromXml = (xmlDoc, items = []) => {
+  // Method 1: Check class name from Build or Spec element
+  const buildElement = xmlDoc.querySelector('Build');
+  const specElement = xmlDoc.querySelector('Spec');
+
+  const className = (
+    buildElement?.getAttribute('className') ||
+    specElement?.getAttribute('className') ||
+    ''
+  ).toLowerCase();
+
+  if (className) {
+    if (POE1_CLASSES.includes(className)) {
+      return 'poe1';
+    }
+    if (POE2_CLASSES.includes(className)) {
+      return 'poe2';
+    }
+  }
+
+  // Method 2: Check ascendancy names (more specific)
+  const ascendancy = (
+    buildElement?.getAttribute('ascendClassName') ||
+    specElement?.getAttribute('ascendClassName') ||
+    ''
+  ).toLowerCase();
+
+  // PoE2 specific ascendancies
+  const poe2Ascendancies = ['invoker', 'stormweaver', 'chronomancer', 'blood mage', 'infernalist', 'titan', 'warbringer', 'gemling legionnaire', 'witchhunter', 'deadeye', 'pathfinder'];
+  // PoE1 specific ascendancies
+  const poe1Ascendancies = ['juggernaut', 'berserker', 'chieftain', 'slayer', 'gladiator', 'champion', 'assassin', 'saboteur', 'trickster', 'inquisitor', 'hierophant', 'guardian', 'necromancer', 'occultist', 'elementalist', 'ascendant'];
+
+  if (ascendancy && poe2Ascendancies.some(a => ascendancy.includes(a))) {
+    return 'poe2';
+  }
+  if (ascendancy && poe1Ascendancies.some(a => ascendancy.includes(a))) {
+    return 'poe1';
+  }
+
+  // Method 3: Check items for game-specific characteristics
+  // PoE2: Has charms, spirit attribute, runes (S sockets)
+  // PoE1: Has RGBW sockets with links
+  const hasCharms = items.some(item =>
+    item.baseType?.toLowerCase().includes('charm') ||
+    item.name?.toLowerCase().includes('charm')
+  );
+
+  const hasColoredSockets = items.some(item =>
+    item.socketInfo?.colors &&
+    (item.socketInfo.colors.r > 0 || item.socketInfo.colors.g > 0 || item.socketInfo.colors.b > 0)
+  );
+
+  if (hasCharms) {
+    return 'poe2';
+  }
+  if (hasColoredSockets) {
+    return 'poe1';
+  }
+
+  // Unable to detect
+  return null;
+};
+
 /**
  * Parses a Path of Building code and extracts item data
  * @param {string} code - PoB code (base64, pobb.in URL, or raw code)
- * @returns {Promise<Array>} Array of parsed items
+ * @returns {Promise<{items: Array, detectedGame: string|null}>} Parsed items and detected game
  * @throws {Error} If parsing fails
  */
 export const parsePoB = async (code) => {
@@ -449,12 +523,11 @@ export const parsePoB = async (code) => {
     throw new Error('No se pudieron extraer items del build. Verifica que el código sea válido.');
   }
 
-  // Debug: Log charms that were parsed
-  const charms = parsedItems.filter(item =>
-    item.baseType?.toLowerCase().includes('charm') ||
-    item.name?.toLowerCase().includes('charm') ||
-    item.rawText?.toLowerCase().includes('charm')
-  );
+  // Detect game from XML and items
+  const detectedGame = detectGameFromXml(xmlDoc, parsedItems);
 
-  return parsedItems;
+  return {
+    items: parsedItems,
+    detectedGame
+  };
 };

@@ -45,7 +45,17 @@ export const useBuildAnalyzer = () => {
     setError('');
 
     try {
-      const parsedItems = await parsePoB(pobCode);
+      const { items: parsedItems, detectedGame } = await parsePoB(pobCode);
+
+      // If game detected and different from selected, auto-switch
+      if (detectedGame && detectedGame !== game) {
+        console.log(`[POB] Detected game: ${detectedGame}, switching from ${game}`);
+        setGame(detectedGame);
+        setLeague(LEAGUES[detectedGame][0].value);
+        // Clear stat cache when switching games
+        statCacheRef.current = null;
+      }
+
       setItems(parsedItems);
       setError('');
     } catch (err) {
@@ -55,7 +65,7 @@ export const useBuildAnalyzer = () => {
     } finally {
       setLoading(false);
     }
-  }, [pobCode]);
+  }, [pobCode, game]);
 
   const handleCopyToClipboard = useCallback(async (item, index) => {
     const stats = await handleFetchStats(game);
