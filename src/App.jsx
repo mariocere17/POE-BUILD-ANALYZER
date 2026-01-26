@@ -28,13 +28,13 @@ const PoEBuildAnalyzer = () => {
     sellerStatus,
     setPobCode,
     setEditingItem,
-    setGame,
     setLeague,
     setSellerStatus,
     handleParsePoB,
     handleCopyToClipboard,
     handleOpenTradeURL,
-    handleSaveItem
+    handleSaveItem,
+    handleGameChange
   } = useBuildAnalyzer();
 
   return (
@@ -46,7 +46,7 @@ const PoEBuildAnalyzer = () => {
           pobCode={pobCode}
           setPobCode={setPobCode}
           game={game}
-          setGame={setGame}
+          onGameChange={handleGameChange}
           league={league}
           setLeague={setLeague}
           loading={loading}

@@ -8,7 +8,7 @@ const BuildForm = ({
   pobCode,
   setPobCode,
   game,
-  setGame,
+  onGameChange,
   league,
   setLeague,
   loading,
@@ -41,7 +41,7 @@ const BuildForm = ({
   }, [game]); // Solo cuando cambia el juego
 
   const handleGameChange = (newGame) => {
-    setGame(newGame);
+    onGameChange(newGame);
     // La liga se actualizará automáticamente en el useEffect
   };
 

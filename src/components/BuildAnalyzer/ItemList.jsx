@@ -1,7 +1,7 @@
 // src/components/BuildAnalyzer/ItemList.jsx
 import React, { useState, useMemo } from 'react';
 import ItemCard from './ItemCard';
-import { SELLER_STATUS_OPTIONS, LEAGUES, ITEM_CATEGORIES, getItemCategory } from '../../utils/constants';
+import { TRADE_MODE_OPTIONS, LEAGUES, ITEM_CATEGORIES, getItemCategory } from '../../utils/constants';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 const ItemList = ({
@@ -108,7 +108,7 @@ const ItemList = ({
               onChange={(e) => setSellerStatus(e.target.value)}
               className="bg-slate-800 border-2 border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all flex-1 sm:flex-none"
             >
-              {SELLER_STATUS_OPTIONS.map(option => (
+              {TRADE_MODE_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
               ))}
             </select>

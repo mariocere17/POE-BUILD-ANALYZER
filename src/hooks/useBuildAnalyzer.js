@@ -4,12 +4,15 @@ import { parsePoB } from '../services/pobParser';
 import { generateTradeURL } from '../services/tradeAPI';
 import { fetchStatIds } from '../services/statsAPI';
 import { sanitizeTradeURL } from '../config/apiConfig';
-import { LEAGUES } from '../utils/constants';
+import { LEAGUES, DEFAULT_TRADE_MODE } from '../utils/constants';
 
 // Default pobb.in URL for development convenience
 const DEV_DEFAULT_POB = process.env.NODE_ENV === 'development'
-  ? 'https://pobb.in/VVZy6u-NrRUi'
+  ? 'https://pobb.in/YnSljOLHhnjt'
   : '';
+
+// Default game for development
+const DEV_DEFAULT_GAME = process.env.NODE_ENV === 'development' ? 'poe1' : 'poe2';
 
 export const useBuildAnalyzer = () => {
   const [pobCode, setPobCode] = useState(DEV_DEFAULT_POB);
@@ -17,10 +20,10 @@ export const useBuildAnalyzer = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [editingItem, setEditingItem] = useState(null);
-  const [game, setGame] = useState('poe2');
-  const [league, setLeague] = useState(LEAGUES.poe2[0].value);
+  const [game, setGame] = useState(DEV_DEFAULT_GAME);
+  const [league, setLeague] = useState(LEAGUES[DEV_DEFAULT_GAME][0].value);
   const [copiedIndex, setCopiedIndex] = useState(null);
-  const [sellerStatus, setSellerStatus] = useState('securable'); // Default to Instant Buyout
+  const [sellerStatus, setSellerStatus] = useState(DEFAULT_TRADE_MODE);
 
   // Use ref for stat cache to avoid re-creating callbacks when cache updates
   const statCacheRef = useRef(null);
@@ -81,6 +84,11 @@ export const useBuildAnalyzer = () => {
     setItems(prevItems => prevItems.map(i => i.id === editedItem.id ? editedItem : i));
   }, []);
 
+  // Handle game change
+  const handleGameChange = useCallback((newGame) => {
+    setGame(newGame);
+  }, []);
+
   return {
     // State
     pobCode,
@@ -104,6 +112,7 @@ export const useBuildAnalyzer = () => {
     handleParsePoB,
     handleCopyToClipboard,
     handleOpenTradeURL,
-    handleSaveItem
+    handleSaveItem,
+    handleGameChange
   };
 };

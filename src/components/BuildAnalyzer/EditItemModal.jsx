@@ -6,7 +6,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 
 const EditItemModal = ({ item, onClose, onSave }) => {
   const { t } = useLanguage();
-  // Deep copy filters and ensure fracturedModIndex and defenceFilters exist
+  // Deep copy filters and ensure fracturedModIndex, defenceFilters and socketFilters exist
   const [editedItem, setEditedItem] = useState(() => ({
     ...item,
     filters: {
@@ -16,7 +16,8 @@ const EditItemModal = ({ item, onClose, onSave }) => {
         energyShield: { min: null, max: null, enabled: false },
         armour: { min: null, max: null, enabled: false },
         evasion: { min: null, max: null, enabled: false }
-      }
+      },
+      socketFilters: item.filters.socketFilters ?? null
     }
   }));
 
@@ -27,8 +28,12 @@ const EditItemModal = ({ item, onClose, onSave }) => {
     item.defenceProperties.evasion !== null
   );
 
+  // Check if item has socket info (PoE1 style sockets)
+  const hasSocketInfo = item.socketInfo !== null && item.socketInfo !== undefined;
+
   // Track which sections are expanded (all expanded by default)
   const [expandedSections, setExpandedSections] = useState({
+    sockets: true,
     defence: true,
     enchants: true,
     implicits: true,
@@ -91,6 +96,30 @@ const EditItemModal = ({ item, onClose, onSave }) => {
         defenceFilters: {
           ...editedItem.filters.defenceFilters,
           [defenceType]: newFilter
+        }
+      }
+    });
+  };
+
+  const handleSocketFilterChange = (socketType, field, value) => {
+    if (!editedItem.filters.socketFilters) return;
+
+    const currentFilter = editedItem.filters.socketFilters[socketType];
+    const newFilter = { ...currentFilter };
+
+    if (field === 'enabled') {
+      newFilter.enabled = value;
+    } else {
+      newFilter[field] = value ? parseInt(value) : null;
+    }
+
+    setEditedItem({
+      ...editedItem,
+      filters: {
+        ...editedItem.filters,
+        socketFilters: {
+          ...editedItem.filters.socketFilters,
+          [socketType]: newFilter
         }
       }
     });
@@ -257,6 +286,140 @@ const EditItemModal = ({ item, onClose, onSave }) => {
                       )}
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Socket Filters Section (PoE1 only) */}
+          {hasSocketInfo && editedItem.filters.socketFilters && (
+            <div>
+              <button
+                type="button"
+                onClick={() => toggleSection('sockets')}
+                className="w-full flex items-center justify-between text-sm text-purple-400 font-bold mb-3 uppercase tracking-wide border-l-4 border-purple-400 pl-3 pr-2 py-1 hover:bg-slate-800/50 rounded-r transition-colors"
+              >
+                <span>{t('editModal.socketFilters')} <span className="text-slate-400 font-normal">({item.socketInfo.raw})</span></span>
+                <ChevronDown
+                  size={20}
+                  className={`transition-transform duration-200 ${expandedSections.sockets ? '' : '-rotate-90'}`}
+                />
+              </button>
+              {expandedSections.sockets && (
+                <div className="space-y-2">
+                  {/* Socket Colors */}
+                  <div className="bg-slate-800/60 border-l-2 border-purple-500/50 p-3 rounded">
+                    <div className="text-sm text-purple-200 font-medium mb-2">{t('editModal.socketColors')}</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {/* Red Sockets */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editedItem.filters.socketFilters.r.enabled}
+                          onChange={(e) => handleSocketFilterChange('r', 'enabled', e.target.checked)}
+                          className="w-4 h-4 cursor-pointer accent-red-500"
+                        />
+                        <span className="text-red-400 font-bold text-sm">R</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="6"
+                          placeholder="Min"
+                          value={editedItem.filters.socketFilters.r.min || ''}
+                          onChange={(e) => handleSocketFilterChange('r', 'min', e.target.value)}
+                          disabled={!editedItem.filters.socketFilters.r.enabled}
+                          className="w-14 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-red-500 disabled:opacity-50"
+                        />
+                        <span className="text-slate-500 text-xs">({item.socketInfo.colors.r})</span>
+                      </div>
+                      {/* Green Sockets */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editedItem.filters.socketFilters.g.enabled}
+                          onChange={(e) => handleSocketFilterChange('g', 'enabled', e.target.checked)}
+                          className="w-4 h-4 cursor-pointer accent-green-500"
+                        />
+                        <span className="text-green-400 font-bold text-sm">G</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="6"
+                          placeholder="Min"
+                          value={editedItem.filters.socketFilters.g.min || ''}
+                          onChange={(e) => handleSocketFilterChange('g', 'min', e.target.value)}
+                          disabled={!editedItem.filters.socketFilters.g.enabled}
+                          className="w-14 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-green-500 disabled:opacity-50"
+                        />
+                        <span className="text-slate-500 text-xs">({item.socketInfo.colors.g})</span>
+                      </div>
+                      {/* Blue Sockets */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editedItem.filters.socketFilters.b.enabled}
+                          onChange={(e) => handleSocketFilterChange('b', 'enabled', e.target.checked)}
+                          className="w-4 h-4 cursor-pointer accent-blue-500"
+                        />
+                        <span className="text-blue-400 font-bold text-sm">B</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="6"
+                          placeholder="Min"
+                          value={editedItem.filters.socketFilters.b.min || ''}
+                          onChange={(e) => handleSocketFilterChange('b', 'min', e.target.value)}
+                          disabled={!editedItem.filters.socketFilters.b.enabled}
+                          className="w-14 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                        />
+                        <span className="text-slate-500 text-xs">({item.socketInfo.colors.b})</span>
+                      </div>
+                      {/* White Sockets */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editedItem.filters.socketFilters.w.enabled}
+                          onChange={(e) => handleSocketFilterChange('w', 'enabled', e.target.checked)}
+                          className="w-4 h-4 cursor-pointer accent-slate-300"
+                        />
+                        <span className="text-slate-200 font-bold text-sm">W</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="6"
+                          placeholder="Min"
+                          value={editedItem.filters.socketFilters.w.min || ''}
+                          onChange={(e) => handleSocketFilterChange('w', 'min', e.target.value)}
+                          disabled={!editedItem.filters.socketFilters.w.enabled}
+                          className="w-14 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-slate-400 disabled:opacity-50"
+                        />
+                        <span className="text-slate-500 text-xs">({item.socketInfo.colors.w})</span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Links */}
+                  <div className="bg-slate-800/60 border-l-2 border-purple-500/50 p-3 rounded">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={editedItem.filters.socketFilters.links.enabled}
+                        onChange={(e) => handleSocketFilterChange('links', 'enabled', e.target.checked)}
+                        className="w-5 h-5 cursor-pointer accent-purple-500"
+                      />
+                      <span className="text-sm text-purple-200 font-medium">{t('editModal.minLinks')}</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="6"
+                        placeholder="Min"
+                        value={editedItem.filters.socketFilters.links.min || ''}
+                        onChange={(e) => handleSocketFilterChange('links', 'min', e.target.value)}
+                        disabled={!editedItem.filters.socketFilters.links.enabled}
+                        className="w-16 bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-purple-500 disabled:opacity-50"
+                      />
+                      <span className="text-slate-400 text-sm">({t('editModal.currentLinks')}: {item.socketInfo.maxLinks})</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

@@ -136,14 +136,6 @@ export const parsePoB = async (code) => {
     const lines = itemText.split('\n').map(l => l.trim()).filter(l => l);
     if (lines.length < 1) return;
 
-    // Debug logging for specific items
-    if (process.env.NODE_ENV === 'development' &&
-        itemText.toLowerCase().includes('corruption ward')) {
-      console.log('=== CORRUPTION WARD DEBUG ===');
-      console.log('Raw itemText:', itemText);
-      console.log('Lines:', lines);
-    }
-
     // Detectar rareza
     let rarity = 'normal';
     let nameLineIdx = 0;
@@ -167,16 +159,6 @@ export const parsePoB = async (code) => {
     // Extraer nombre y tipo base
     let name = lines[nameLineIdx] || lines[0];
     let baseType = lines[nameLineIdx + 1] || lines[1] || name;
-
-    // Debug: log name extraction for specific items
-    if (process.env.NODE_ENV === 'development' &&
-        itemText.toLowerCase().includes('corruption ward')) {
-      console.log('=== CORRUPTION WARD NAME DEBUG ===');
-      console.log('nameLineIdx:', nameLineIdx);
-      console.log('name (initial):', name);
-      console.log('baseType (initial):', baseType);
-      console.log('rarity:', rarity);
-    }
 
     // Fix for magic/rare items where baseType might be "Unique ID:" instead of actual base
     // This happens with charms, flasks and other items that don't have a separate basetype line
@@ -231,19 +213,45 @@ export const parsePoB = async (code) => {
       evasion: evasionMatch ? parseInt(evasionMatch[1]) : null
     };
 
-    // Debug: log defence properties for specific items
-    if (process.env.NODE_ENV === 'development' &&
-        itemText.toLowerCase().includes('corruption ward')) {
-      console.log('=== CORRUPTION WARD DEFENCE DEBUG ===');
-      console.log('defenceProperties:', defenceProperties);
-    }
-
     // Detectar corrupción
     const corrupted = itemText.includes('Corrupted');
 
     // Extraer sockets/runas
     const socketsMatch = itemText.match(/Sockets: (.+)/);
     const sockets = socketsMatch ? socketsMatch[1].trim() : null;
+
+    // Parse socket info (PoE1 style: "R-R-B-G-G-G" where - means linked, space means unlinked)
+    let socketInfo = null;
+    if (sockets && sockets.match(/^[RGBWS\- ]+$/i)) {
+      // Count colors
+      const colors = { r: 0, g: 0, b: 0, w: 0 };
+      const socketChars = sockets.replace(/[\- ]/g, '').toUpperCase();
+      for (const char of socketChars) {
+        if (char === 'R') colors.r++;
+        else if (char === 'G') colors.g++;
+        else if (char === 'B') colors.b++;
+        else if (char === 'W') colors.w++;
+      }
+
+      // Calculate max link group (sockets connected by -)
+      // Split by space to get groups, then count each group's length
+      const groups = sockets.split(' ').filter(g => g.length > 0);
+      let maxLinks = 0;
+      for (const group of groups) {
+        // Count sockets in this linked group (R-R-B = 3 linked)
+        const socketsInGroup = group.split('-').filter(s => s.match(/^[RGBW]$/i)).length;
+        if (socketsInGroup > maxLinks) {
+          maxLinks = socketsInGroup;
+        }
+      }
+
+      socketInfo = {
+        raw: sockets,
+        colors,
+        totalSockets: socketChars.length,
+        maxLinks
+      };
+    }
 
     // Extraer mods diferenciando implícitos, enchants y explícitos
     const implicitMods = [];
@@ -289,6 +297,24 @@ export const parsePoB = async (code) => {
         line.startsWith('Attacks per Second:') ||
         line.startsWith('Weapon Range:') ||
         line.startsWith('Spirit:') ||
+        // PoB internal properties (not actual mods)
+        line.startsWith('EvasionBasePercentile:') ||
+        line.startsWith('ArmourBasePercentile:') ||
+        line.startsWith('EnergyShieldBasePercentile:') ||
+        // Item status flags (not mods)
+        line === 'Fractured Item' ||
+        line === 'Split' ||
+        line === 'Mirrored' ||
+        line === 'Synthesised Item' ||
+        // Influence types (not mods)
+        line === 'Searing Exarch Item' ||
+        line === 'Eater of Worlds Item' ||
+        line === 'Shaper Item' ||
+        line === 'Elder Item' ||
+        line === 'Crusader Item' ||
+        line === 'Redeemer Item' ||
+        line === 'Hunter Item' ||
+        line === 'Warlord Item' ||
         line === 'Corrupted' ||
         line === name ||
         line === baseType) {
@@ -356,8 +382,9 @@ export const parsePoB = async (code) => {
       }
     }
 
-    // Contar sockets
-    const socketCount = sockets ? sockets.split(' ').filter(s => s === 'S').length : 0;
+    // Contar sockets (use socketInfo if available, fallback to old method for PoE2)
+    const socketCount = socketInfo ? socketInfo.totalSockets :
+                        (sockets ? sockets.split(' ').filter(s => s === 'S').length : 0);
 
     // Obtener slot
     const slotAttr = itemEl.getAttribute('id');
@@ -376,6 +403,7 @@ export const parsePoB = async (code) => {
       enchantMods,
       explicitMods,
       socketCount,
+      socketInfo, // PoE1 socket details (colors, links)
       ilvl,
       levelReq,
       corrupted,
@@ -393,7 +421,7 @@ export const parsePoB = async (code) => {
           )
         },
         maxValues: {},
-        selectedImplicits: implicitMods.map(() => true),
+        selectedImplicits: implicitMods.map(() => false),
         selectedEnchants: enchantMods.map(() => false),
         selectedExplicits: explicitMods.map(() => true),
         fracturedModIndex: null, // Index of the explicit mod to search as fractured (null = none)
@@ -403,7 +431,16 @@ export const parsePoB = async (code) => {
           energyShield: { min: defenceProperties.energyShield, max: null, enabled: false },
           armour: { min: defenceProperties.armour, max: null, enabled: false },
           evasion: { min: defenceProperties.evasion, max: null, enabled: false }
-        }
+        },
+        // Socket filters (PoE1 only)
+        socketFilters: socketInfo ? {
+          enabled: false,
+          r: { min: null, enabled: false },
+          g: { min: null, enabled: false },
+          b: { min: null, enabled: false },
+          w: { min: null, enabled: false },
+          links: { min: null, enabled: false }
+        } : null
       }
     });
   });

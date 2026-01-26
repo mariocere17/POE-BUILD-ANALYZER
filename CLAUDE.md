@@ -5,6 +5,100 @@ PoE Build Analyzer es una aplicación React que genera enlaces de trade automát
 
 ---
 
+## ⚠️ CRITICAL FIX (2026-01-26) - Empty Filters Cause "Failed to load search state"
+
+### Problem
+
+Trade URLs were failing with error: **"Failed to load search state. The search is no longer valid."**
+
+The URL parameter `q` was being stripped/ignored by the trade site, causing redirects to the base URL without search parameters.
+
+### Root Cause
+
+Empty filter objects in the query JSON were causing the PoE trade site to reject the entire query:
+
+```json
+{
+  "filters": {
+    "type_filters": { "filters": { "rarity": {...} } },
+    "misc_filters": { "filters": {} },        // ← EMPTY - CAUSES ERROR
+    "equipment_filters": { "filters": {} }    // ← EMPTY - CAUSES ERROR
+  },
+  "stats": []  // ← EMPTY ARRAY - CAUSES ERROR
+}
+```
+
+### Solution
+
+Added cleanup function in `tradeAPI.js` to remove empty filter groups before encoding:
+
+```javascript
+// Clean up empty filters to avoid "Failed to load search state" errors
+const cleanFilters = (filters) => {
+  const cleaned = {};
+  for (const [key, value] of Object.entries(filters)) {
+    if (value && typeof value === 'object') {
+      if (value.filters && Object.keys(value.filters).length === 0) {
+        continue; // Skip empty filter groups
+      }
+      cleaned[key] = value;
+    }
+  }
+  return cleaned;
+};
+
+query.query.filters = cleanFilters(query.query.filters);
+
+// Remove empty stats array
+if (query.query.stats.length === 0) {
+  delete query.query.stats;
+}
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/tradeAPI.js` | Added `cleanFilters()` function before URL encoding |
+
+### How to Identify This Problem
+
+1. Trade URL opens but shows "Failed to load search state" error
+2. Browser URL changes from `...?q={...}` to just the base URL (query param stripped)
+3. Network tab shows the full URL was sent, but trade site redirected
+
+### Prevention
+
+Always ensure new filter groups added to the query are either:
+- Populated with actual filter values, OR
+- Removed from the query before encoding
+
+---
+
+## Session Work (2026-01-26) - Trade Mode Options Fix
+
+### Problem
+
+Previously documented that PoE1 only supports `online` and `any` status values. This was **incorrect**.
+
+### Correction
+
+Both PoE1 and PoE2 support the same trade mode options:
+- `securable` - Instant Buyout
+- `available` - Instant Buyout & In Person
+- `online` - Online Only / In Person Only
+- `any` - Any
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/utils/constants.js` | Unified `TRADE_MODE_OPTIONS` as single array for both games |
+| `src/hooks/useBuildAnalyzer.js` | Simplified to use single `DEFAULT_TRADE_MODE` value |
+| `src/components/BuildAnalyzer/ItemList.jsx` | Use array directly instead of `TRADE_MODE_OPTIONS[game]` |
+
+---
+
 ## Session Work (2026-01-21) - Item Category Filtering
 
 ### New Feature: Item Category Filter
@@ -1220,3 +1314,253 @@ Talismans in PoE2 are focus-type weapons, not accessories.
 | `#% increased Critical Hit Chance` | `explicit.stat_587431675` |
 | `#% increased effect of Socketed Items` | `explicit.stat_2081918629` |
 | `+# to Spirit` | `explicit.stat_3981240776` |
+
+---
+
+## Session Work (2026-01-25) - Socket Filters (PoE1)
+
+### New Feature
+
+Added socket filtering capability for PoE1 items (PoE2 uses different itemization without sockets).
+
+### How Socket Parsing Works
+
+PoB exports sockets in format: `Sockets: R-R-B-G-G-G`
+- Colors separated by `-` are **linked**
+- Colors separated by space are **unlinked**
+
+```javascript
+// Example: "R-R-B G-G-G" = 3-link (RGB) + 3-link (GGG), not linked to each other
+const socketInfo = {
+  raw: "R-R-B-G-G-G",
+  colors: { r: 2, g: 3, b: 1, w: 0 },
+  totalSockets: 6,
+  maxLinks: 6
+};
+```
+
+### Socket Filters UI
+
+In Edit Item Modal (PoE1 only):
+- **Socket Colors**: Checkboxes for R, G, B, W with min value inputs
+- **Minimum Links**: Number input for minimum linked sockets
+- Purple-themed collapsible section
+
+### Trade Query Generation
+
+```json
+{
+  "query": {
+    "filters": {
+      "socket_filters": {
+        "filters": {
+          "sockets": { "r": 2, "g": 3, "b": 1 },
+          "links": { "min": 5 }
+        }
+      }
+    }
+  }
+}
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/pobParser.js` | Parse socket string, extract colors/links, add `socketInfo` to item, initialize `socketFilters` in filters |
+| `src/components/BuildAnalyzer/EditItemModal.jsx` | Socket Filters UI section (purple theme), color checkboxes, min link input |
+| `src/services/tradeAPI.js` | Generate `socket_filters` in trade query |
+| `src/i18n/translations.js` | Added `editModal.socketFilters`, `editModal.socketColors`, `editModal.minLinks`, `editModal.currentLinks` (EN/ES) |
+
+### Key Code
+
+**Socket parsing (pobParser.js):**
+```javascript
+let socketInfo = null;
+if (sockets && sockets.match(/^[RGBWS\- ]+$/i)) {
+  const colors = { r: 0, g: 0, b: 0, w: 0 };
+  let maxLinks = 0;
+
+  // Split by space to get link groups, then count colors
+  const groups = sockets.split(' ');
+  groups.forEach(group => {
+    const groupColors = group.split('-');
+    maxLinks = Math.max(maxLinks, groupColors.length);
+    groupColors.forEach(c => {
+      const color = c.toLowerCase();
+      if (colors.hasOwnProperty(color)) colors[color]++;
+    });
+  });
+
+  socketInfo = { raw: sockets, colors, totalSockets, maxLinks };
+}
+```
+
+---
+
+## Session Work (2026-01-25) - Parser Exclusions for PoE1 Metadata
+
+### Problem
+
+Several PoE1 item metadata lines were being incorrectly parsed as mods:
+- `Fractured Item` - Status flag
+- `Split` - Status flag
+- `Mirrored` - Status flag
+- `Synthesised Item` - Status flag
+- `Searing Exarch Item` - Influence type
+- `Eater of Worlds Item` - Influence type
+- `Shaper Item` - Influence type
+- `Elder Item` - Influence type
+- `Crusader Item` - Influence type
+- `Hunter Item` - Influence type
+- `Redeemer Item` - Influence type
+- `Warlord Item` - Influence type
+- `EvasionBasePercentile: #` - PoB internal property
+
+### Solution
+
+Added comprehensive exclusion list in `pobParser.js` mod extraction:
+
+```javascript
+// Skip item status flags and influence markers
+if (
+  line === 'Fractured Item' ||
+  line === 'Split' ||
+  line === 'Mirrored' ||
+  line === 'Synthesised Item' ||
+  line === 'Searing Exarch Item' ||
+  line === 'Eater of Worlds Item' ||
+  line === 'Shaper Item' ||
+  line === 'Elder Item' ||
+  line === 'Crusader Item' ||
+  line === 'Hunter Item' ||
+  line === 'Redeemer Item' ||
+  line === 'Warlord Item' ||
+  line.startsWith('EvasionBasePercentile:') ||
+  line.startsWith('ArmourBasePercentile:') ||
+  line.startsWith('EnergyShieldBasePercentile:')
+) {
+  continue;
+}
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/pobParser.js` | Added exclusions for status flags, influence types, and PoB internal properties |
+
+---
+
+## Session Work (2026-01-25) - Implicit Mods Disabled by Default
+
+### Change
+
+Changed the default value for `selectedImplicits` from `true` to `false` in `pobParser.js`.
+
+### Reason
+
+Implicit mods are often less relevant for trade searches, and enabling them by default can make searches too restrictive.
+
+### Code Change
+
+```javascript
+// Before
+selectedImplicits: implicits.map(() => true),
+
+// After
+selectedImplicits: implicits.map(() => false),
+```
+
+---
+
+## ⚠️ Session Work (2026-01-25) - CRITICAL: Trade Mode Options Fix (PoE1 vs PoE2)
+
+### Problem
+
+**The `securable` (Instant Buyout) trade status value does NOT exist in PoE1 trade API.**
+
+Using `securable` for PoE1 searches causes:
+```
+"Failed to load search state"
+```
+
+This error appears because the PoE1 trade website doesn't recognize the `securable` status parameter.
+
+### Root Cause
+
+PoE1 and PoE2 have different trade status options:
+
+| Game | Available Values | Description |
+|------|------------------|-------------|
+| **PoE2** | `securable`, `available`, `online`, `any` | Instant Buyout system exists |
+| **PoE1** | `online`, `any` | No Instant Buyout (whisper-only trading) |
+
+The app was using `securable` as default for both games, breaking PoE1 searches.
+
+### Solution
+
+#### 1. Game-Specific Trade Mode Options (`src/utils/constants.js`)
+
+```javascript
+export const TRADE_MODE_OPTIONS = {
+  poe2: [
+    { value: 'securable', labelKey: 'tradeMode.instantBuyout' },
+    { value: 'available', labelKey: 'tradeMode.instantAndInPerson' },
+    { value: 'online', labelKey: 'tradeMode.inPersonOnly' },
+    { value: 'any', labelKey: 'tradeMode.any' }
+  ],
+  poe1: [
+    { value: 'online', labelKey: 'tradeMode.onlineOnly' },
+    { value: 'any', labelKey: 'tradeMode.any' }
+  ]
+};
+
+export const DEFAULT_TRADE_MODE = {
+  poe2: 'securable',
+  poe1: 'online'
+};
+```
+
+#### 2. Game Change Handler (`src/hooks/useBuildAnalyzer.js`)
+
+```javascript
+const DEV_DEFAULT_GAME = process.env.NODE_ENV === 'development' ? 'poe1' : 'poe2';
+const [sellerStatus, setSellerStatus] = useState(DEFAULT_TRADE_MODE[DEV_DEFAULT_GAME]);
+
+const handleGameChange = useCallback((newGame) => {
+  setGame(newGame);
+  // CRITICAL: Reset seller status to game-appropriate default
+  setSellerStatus(DEFAULT_TRADE_MODE[newGame]);
+}, []);
+```
+
+#### 3. Dynamic Options in UI (`src/components/BuildAnalyzer/ItemList.jsx`)
+
+```javascript
+// Use game-specific options
+{TRADE_MODE_OPTIONS[game].map(option => (
+  <option key={option.value} value={option.value}>
+    {t(option.labelKey)}
+  </option>
+))}
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/utils/constants.js` | Added `TRADE_MODE_OPTIONS` (per-game) and `DEFAULT_TRADE_MODE` |
+| `src/hooks/useBuildAnalyzer.js` | Added `handleGameChange`, game-specific defaults |
+| `src/components/BuildAnalyzer/ItemList.jsx` | Dynamic options from `TRADE_MODE_OPTIONS[game]` |
+| `src/components/BuildAnalyzer/BuildForm.jsx` | Added `onGameChange` prop |
+| `src/App.jsx` | Pass `handleGameChange` to BuildForm |
+| `src/i18n/translations.js` | Added `tradeMode.onlineOnly` (EN/ES) |
+
+### Testing
+
+When switching games in the UI:
+- **PoE2 → PoE1**: Status resets to `online`
+- **PoE1 → PoE2**: Status resets to `securable`
+
+This prevents the "Failed to load search state" error.

@@ -156,6 +156,48 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
     }
   }
 
+  // Añadir filtros de sockets (PoE1 only)
+  if (item.filters?.socketFilters && item.socketInfo) {
+    const { socketFilters } = item.filters;
+    const socketFilter = {};
+    const linkFilter = {};
+
+    // Socket colors
+    if (socketFilters.r?.enabled && socketFilters.r.min) {
+      socketFilter.r = socketFilters.r.min;
+    }
+    if (socketFilters.g?.enabled && socketFilters.g.min) {
+      socketFilter.g = socketFilters.g.min;
+    }
+    if (socketFilters.b?.enabled && socketFilters.b.min) {
+      socketFilter.b = socketFilters.b.min;
+    }
+    if (socketFilters.w?.enabled && socketFilters.w.min) {
+      socketFilter.w = socketFilters.w.min;
+    }
+
+    // Links
+    if (socketFilters.links?.enabled && socketFilters.links.min) {
+      linkFilter.min = socketFilters.links.min;
+    }
+
+    // Add socket_filters to query if any filters are set
+    if (Object.keys(socketFilter).length > 0 || Object.keys(linkFilter).length > 0) {
+      query.query.filters.socket_filters = { filters: {} };
+
+      if (Object.keys(socketFilter).length > 0) {
+        query.query.filters.socket_filters.filters.sockets = socketFilter;
+      }
+      if (Object.keys(linkFilter).length > 0) {
+        query.query.filters.socket_filters.filters.links = linkFilter;
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[TRADE] Socket filters:', query.query.filters.socket_filters.filters);
+      }
+    }
+  }
+
   // Nota: No filtramos por corrupted ni fractured_item por defecto
   // para que la búsqueda sea más amplia y muestre todos los items
 
@@ -354,6 +396,30 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
       query.query.stats.push(countGroup);
     });
   }
+
+  // Clean up empty filters to avoid "Failed to load search state" errors
+  // Some trade sites (especially PoE1) don't accept empty filter objects
+  const cleanFilters = (filters) => {
+    const cleaned = {};
+    for (const [key, value] of Object.entries(filters)) {
+      if (value && typeof value === 'object') {
+        if (value.filters && Object.keys(value.filters).length === 0) {
+          // Skip empty filter groups
+          continue;
+        }
+        cleaned[key] = value;
+      }
+    }
+    return cleaned;
+  };
+
+  query.query.filters = cleanFilters(query.query.filters);
+
+  // Remove empty stats array
+  if (query.query.stats.length === 0) {
+    delete query.query.stats;
+  }
+
   const encodedQuery = encodeURIComponent(JSON.stringify(query));
   const leagueParam = league.replace(/ /g, '%20');
 

@@ -81,7 +81,11 @@ Examples:
       equipmentFilters: 'Equipment Filters',
       energyShield: 'Energy Shield',
       armour: 'Armour',
-      evasion: 'Evasion'
+      evasion: 'Evasion',
+      socketFilters: 'Socket Filters',
+      socketColors: 'Socket Colors',
+      minLinks: 'Minimum Links',
+      currentLinks: 'current'
     },
 
     // Report Modal
@@ -192,6 +196,7 @@ Examples:
       instantBuyout: 'Instant Buyout',
       instantAndInPerson: 'Instant Buyout & In Person',
       inPersonOnly: 'In Person Only',
+      onlineOnly: 'Online Only',
       any: 'Any'
     }
   },
@@ -277,7 +282,11 @@ Ejemplos:
       equipmentFilters: 'Filtros de Equipamiento',
       energyShield: 'Escudo de Energía',
       armour: 'Armadura',
-      evasion: 'Evasión'
+      evasion: 'Evasión',
+      socketFilters: 'Filtros de Engarces',
+      socketColors: 'Colores de Engarces',
+      minLinks: 'Enlaces Mínimos',
+      currentLinks: 'actual'
     },
 
     // Report Modal
@@ -388,6 +397,7 @@ Ejemplos:
       instantBuyout: 'Compra Instantánea',
       instantAndInPerson: 'Instantánea y En Persona',
       inPersonOnly: 'Solo En Persona',
+      onlineOnly: 'Solo Online',
       any: 'Cualquiera'
     }
   }
