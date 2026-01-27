@@ -89,6 +89,9 @@ const REDUCED_TO_INCREASED_MODS = [
   { pattern: /^#% reduced Duration$/i, replacement: '#% increased Duration' },
   { pattern: /^#% reduced effect$/i, replacement: '#% increased effect' },
   { pattern: /^#% reduced Amount Recovered$/i, replacement: '#% increased Amount Recovered' },
+  // Grip of Kulemak unique ring stats (PoE2)
+  { pattern: /^#% reduced Presence Area of Effect$/i, replacement: '#% increased Presence Area of Effect' },
+  { pattern: /^#% reduced Light Radius$/i, replacement: '#% increased Light Radius' },
 ];
 
 /**
@@ -150,6 +153,40 @@ const DIRECT_STAT_MAPPINGS = {
   'Gain #% of Damage as Extra Chaos Damage': 'explicit.stat_3398787959',
   // Critical Spell Damage Bonus (different from regular Critical Damage Bonus)
   '#% increased Critical Spell Damage Bonus': 'explicit.stat_274716455',
+
+  // =========================================================================
+  // Atziri's Rule unique staff stats (PoE2)
+  // =========================================================================
+  '#% increased maximum Life': 'explicit.stat_983749596',
+  '+# to Level of all Corrupted Spell Skill Gems': 'explicit.stat_2061237517',
+  '# to Level of all Corrupted Spell Skill Gems': 'explicit.stat_2061237517',
+  'Spells which cost Life Gain #% of Damage as Extra Physical Damage': 'explicit.stat_1088082880',
+  '#% increased Life Cost Efficiency': 'explicit.stat_310945763',
+  '#% chance for Spell Skills to fire # additional Projectiles': 'explicit.stat_2910761524',
+
+  // =========================================================================
+  // Grip of Kulemak unique ring stats (PoE2) - Abyssal Signet
+  // Note: "reduced" versions are transformed to "increased" with negative values
+  // =========================================================================
+  '#% increased Presence Area of Effect': 'explicit.stat_101878827',
+  '#% increased Light Radius': 'explicit.stat_1263695895',
+  '#% increased Mana Regeneration Rate while Surrounded': 'explicit.stat_1895238057',
+  '+# to Spirit while you have at least # Intelligence': 'explicit.stat_1282318918',
+  '# to Spirit while you have at least # Intelligence': 'explicit.stat_1282318918',
+};
+
+/**
+ * Rune mod mappings for PoE2 - these use 'rune.' prefix instead of 'enchant.'
+ * Rune mods come from socketed runes in weapons and appear as enchants in PoB
+ */
+const DIRECT_RUNE_MAPPINGS = {
+  // Common rune mods
+  '+# to Level of all Spell Skills': 'rune.stat_124131830',
+  '# to Level of all Spell Skills': 'rune.stat_124131830',
+  'Gain #% of Damage as Extra Damage of all Elements': 'rune.stat_731403740',
+  // Bonded rune mods (Shaman-specific)
+  '#% chance when collecting an Elemental Infusion to gain an additional Elemental Infusion of the same type': 'rune.stat_3909696841',
+  'Archon recovery period expires #% faster': 'rune.stat_975988108',
 };
 
 /**
@@ -713,10 +750,11 @@ export const transformReducedMod = (normalizedMod, value) => {
  * Uses direct mappings first, then exact matching, then fuzzy matching (if enabled)
  * @param {object} stats - Stats data from API
  * @param {string} normalizedMod - Normalized mod text
- * @param {string} modType - 'enchant', 'implicit', or 'explicit'
+ * @param {string} modType - 'enchant', 'implicit', 'explicit', or 'rune'
+ * @param {boolean} isRuneEnchant - If true, this is a rune enchant (uses rune.stat_ prefix)
  * @returns {string|null} Stat ID or null if not found
  */
-export const findStatId = (stats, normalizedMod, modType) => {
+export const findStatId = (stats, normalizedMod, modType, isRuneEnchant = false) => {
   if (!stats || !stats.result) return null;
 
   // 0. Check if this is an unsearchable local mod (flask mods, etc.)
@@ -735,7 +773,18 @@ export const findStatId = (stats, normalizedMod, modType) => {
     return null;
   }
 
-  // 1. Check "Allocates X" passive mappings (Megalomaniac jewel)
+  // 1. Check rune mappings FIRST for rune enchants (PoE2 socketed runes)
+  if ((modType === 'enchant' && isRuneEnchant) || modType === 'rune') {
+    if (DIRECT_RUNE_MAPPINGS[normalizedMod]) {
+      const runeId = DIRECT_RUNE_MAPPINGS[normalizedMod];
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[STATS] Rune mapping: "${normalizedMod}" -> ${runeId}`);
+      }
+      return runeId;
+    }
+  }
+
+  // 2. Check "Allocates X" passive mappings (Megalomaniac jewel)
   // These are parsed as implicits by PoB but use enchant stat IDs in trade API
   if (normalizedMod.startsWith('Allocates ') && ALLOCATES_PASSIVE_MAPPINGS[normalizedMod]) {
     const allocatesId = ALLOCATES_PASSIVE_MAPPINGS[normalizedMod];
@@ -745,7 +794,7 @@ export const findStatId = (stats, normalizedMod, modType) => {
     return allocatesId;
   }
 
-  // 2. Check direct mappings FIRST (for stats with known different IDs in PoE2)
+  // 3. Check direct mappings FIRST (for stats with known different IDs in PoE2)
   if (modType === 'explicit' && DIRECT_STAT_MAPPINGS[normalizedMod]) {
     const directId = DIRECT_STAT_MAPPINGS[normalizedMod];
     if (process.env.NODE_ENV === 'development') {
@@ -788,6 +837,12 @@ export const validateStatId = (stats, statId) => {
   // Check if the stat ID is in our direct mappings (these are valid but not in the API)
   const directMappingIds = Object.values(DIRECT_STAT_MAPPINGS);
   if (directMappingIds.includes(statId)) {
+    return true;
+  }
+
+  // Check if the stat ID is in our rune mappings (PoE2 socketed runes)
+  const runeMappingIds = Object.values(DIRECT_RUNE_MAPPINGS);
+  if (runeMappingIds.includes(statId)) {
     return true;
   }
 

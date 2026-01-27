@@ -5,6 +5,115 @@ PoE Build Analyzer es una aplicación React que genera enlaces de trade automát
 
 ---
 
+## Session Work (2026-01-27) - Rune Mods Support (PoE2)
+
+### Problem
+
+Items with socketed runes (like **Atziri's Rule**) have enchant mods that use the `rune.` prefix in the trade API, but the code was searching with `enchant.` prefix, causing mods to not be found.
+
+### Root Cause
+
+PoE2 has two types of enchant-like mods:
+- **Regular enchants**: Use `enchant.stat_XXXX` prefix
+- **Rune mods** (from socketed runes): Use `rune.stat_XXXX` prefix
+
+The parser correctly detected `{enchant}{rune}` tags but `findStatId()` always used `enchant.` prefix.
+
+### Solution
+
+1. **Added `DIRECT_RUNE_MAPPINGS`** object for known rune mod stat IDs
+2. **Modified `findStatId()`** to accept `isRuneEnchant` parameter
+3. **Modified `tradeAPI.js`** to pass `mod.isRuneEnchant` flag
+
+### Rune Mods Mapped
+
+| Mod Text | Stat ID |
+|----------|---------|
+| `+# to Level of all Spell Skills` | `rune.stat_124131830` |
+| `Gain #% of Damage as Extra Damage of all Elements` | `rune.stat_731403740` |
+| `#% chance when collecting an Elemental Infusion...` | `rune.stat_3909696841` |
+| `Archon recovery period expires #% faster` | `rune.stat_975988108` |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/statsAPI.js` | Added `DIRECT_RUNE_MAPPINGS`, modified `findStatId()` with `isRuneEnchant` param, updated `validateStatId()` |
+| `src/services/tradeAPI.js` | Pass `mod.isRuneEnchant` to `findStatId()` for enchant processing |
+
+---
+
+## Session Work (2026-01-27) - Atziri's Rule Stat Mappings
+
+### Problem
+
+**Atziri's Rule** (unique staff) explicit mods were not being found in trade searches.
+
+### Solution
+
+Added direct stat mappings for Atziri's Rule mods:
+
+| Mod Text | Stat ID |
+|----------|---------|
+| `#% increased maximum Life` | `explicit.stat_983749596` |
+| `+# to Level of all Corrupted Spell Skill Gems` | `explicit.stat_2061237517` |
+| `Spells which cost Life Gain #% of Damage as Extra Physical Damage` | `explicit.stat_1088082880` |
+| `#% increased Life Cost Efficiency` | `explicit.stat_310945763` |
+| `#% chance for Spell Skills to fire # additional Projectiles` | `explicit.stat_2910761524` |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/services/statsAPI.js` | Added Atziri's Rule stats to `DIRECT_STAT_MAPPINGS` |
+
+---
+
+## Session Work (2026-01-27) - Grip of Kulemak Fixes
+
+### Problems
+
+1. **Wrong category**: "Abyssal Signet" (a ring) was categorized as "Armour" instead of "Accessories"
+2. **Mods not found**: Several explicit mods were not being matched
+
+### Solutions
+
+#### 1. Category Fix
+
+Added "signet" to accessory detection in `getItemCategory()`:
+
+```javascript
+if (baseTypeLower.includes('ring') || baseTypeLower.includes('amulet') ||
+    baseTypeLower.includes('belt') || baseTypeLower.includes('signet')) {
+```
+
+#### 2. Reduced → Increased Transformations
+
+Added transformations for "reduced" mods that exist as negative "increased" in the API:
+
+| Reduced Mod | Transforms To |
+|-------------|---------------|
+| `#% reduced Presence Area of Effect` | `#% increased Presence Area of Effect` (negative value) |
+| `#% reduced Light Radius` | `#% increased Light Radius` (negative value) |
+
+#### 3. Direct Stat Mappings
+
+| Mod Text | Stat ID |
+|----------|---------|
+| `#% increased Presence Area of Effect` | `explicit.stat_101878827` |
+| `#% increased Light Radius` | `explicit.stat_1263695895` |
+| `#% increased Mana Regeneration Rate while Surrounded` | `explicit.stat_1895238057` |
+| `+# to Spirit while you have at least # Intelligence` | `explicit.stat_1282318918` |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/utils/constants.js` | Added "signet" to accessory detection |
+| `src/services/statsAPI.js` | Added `REDUCED_TO_INCREASED_MODS` entries, added Grip of Kulemak stats to `DIRECT_STAT_MAPPINGS` |
+
+---
+
 ## ⚠️ CRITICAL FIX (2026-01-26) - Empty Filters Cause "Failed to load search state"
 
 ### Problem

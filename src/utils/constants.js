@@ -160,7 +160,8 @@ export const getItemCategory = (item) => {
     }
 
     // Check for accessories BEFORE jewels (because "Amethyst Ring" contains "Amethyst")
-    if (baseTypeLower.includes('ring') || baseTypeLower.includes('amulet') || baseTypeLower.includes('belt')) {
+    // Note: "Signet" is a ring type in PoE2 (e.g., "Abyssal Signet")
+    if (baseTypeLower.includes('ring') || baseTypeLower.includes('amulet') || baseTypeLower.includes('belt') || baseTypeLower.includes('signet')) {
       return ITEM_CATEGORIES.accessories;
     }
 

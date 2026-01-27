@@ -214,12 +214,14 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
       console.log('Selected explicits:', item.filters.selectedExplicits);
     }
 
-    // Procesar enchants
+    // Procesar enchants (including rune enchants from PoE2 socketed runes)
     item.enchantMods.forEach((mod, i) => {
       if (item.filters.selectedEnchants[i]) {
-        const statId = findStatId(stats, mod.normalized, 'enchant');
+        // Pass isRuneEnchant flag to findStatId so it uses rune.stat_ prefix for rune mods
+        const statId = findStatId(stats, mod.normalized, 'enchant', mod.isRuneEnchant);
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[ENCHANT ${i}] "${mod.normalized}" -> ${statId || '❌ NOT FOUND'}`);
+          const runeLabel = mod.isRuneEnchant ? ' [RUNE]' : '';
+          console.log(`[ENCHANT ${i}]${runeLabel} "${mod.normalized}" -> ${statId || '❌ NOT FOUND'}`);
         }
         if (statId) {
           const filter = { id: statId, disabled: false };
