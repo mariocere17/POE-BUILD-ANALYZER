@@ -53,9 +53,16 @@ const getPobbCode = async (input) => {
   }
 
   // Detectar si es una URL de poe.ninja
-  if (trimmedInput.includes('poe.ninja') && trimmedInput.includes('/pob/')) {
+  if (trimmedInput.includes('poe.ninja')) {
     throw new Error(
-      'poe.ninja PoB URLs are not directly supported. Please visit the poe.ninja page, click on "Import in PoB" to get the code, and paste it here.'
+      'poe.ninja URLs are not supported. Please export the build from Path of Building and paste the code, or use a pobb.in link.'
+    );
+  }
+
+  // Detectar otras URLs que no son códigos PoB válidos
+  if (/^https?:\/\//i.test(trimmedInput)) {
+    throw new Error(
+      'Only pobb.in URLs are supported. Please paste a pobb.in link or a raw PoB code.'
     );
   }
 
@@ -207,7 +214,7 @@ export const parsePoB = async (code) => {
     }
   } catch (err) {
     console.error('Decompression error:', err);
-    throw new Error('Código PoB inválido. Asegúrate de copiar el código completo. Error: ' + err.message);
+    throw new Error('Invalid PoB code. Make sure to copy the complete code from Path of Building (Export > Share with Pastebin / pobb.in).');
   }
 
   // Parsear XML
