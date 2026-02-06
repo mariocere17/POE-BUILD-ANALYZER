@@ -33,6 +33,12 @@
   animation: slideOut 0.3s ease-in forwards;
 }
 
+/* Background with subtle radial gradient */
+.bg-textured {
+  background: radial-gradient(ellipse 70% 50% at 50% 40%, #0f172a 0%, #020617 100%);
+  min-height: 100vh;
+}
+
 /* Custom scrollbar - tema oscuro */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;

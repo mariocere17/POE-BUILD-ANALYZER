@@ -40,7 +40,7 @@ const PoEBuildAnalyzer = () => {
   } = useBuildAnalyzer();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white p-6 flex flex-col">
+    <div className="min-h-screen bg-textured text-white p-6 flex flex-col">
       <div className="max-w-7xl mx-auto flex-1 w-full">
         <Header />
 
