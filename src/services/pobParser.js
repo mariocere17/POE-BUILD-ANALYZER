@@ -24,7 +24,7 @@ const fetchPobbinCode = async (url) => {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(() => ({ error: 'Non-JSON error response' }));
       throw new Error(errorData.details || errorData.error || 'Failed to fetch from pobb.in');
     }
 

@@ -107,11 +107,13 @@ const CurrencyConverter = ({
       return;
     }
 
+    let animationTimeoutId = null;
+
     // Configurar nuevo intervalo
     intervalRef.current = setInterval(() => {
       setIsAnimating(true);
 
-      setTimeout(() => {
+      animationTimeoutId = setTimeout(() => {
         setCurrentIndex((prevIndex) => {
           const nextIndex = prevIndex + 1;
           // Si llegamos al final, volver al inicio
@@ -125,6 +127,9 @@ const CurrencyConverter = ({
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+      }
+      if (animationTimeoutId) {
+        clearTimeout(animationTimeoutId);
       }
     };
   }, [currencyPairs.length, maxVisible, rotationInterval, isPaused]);

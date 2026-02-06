@@ -36,6 +36,10 @@ export const LanguageProvider = ({ children }) => {
   };
 
   const t = (key, params = {}) => {
+    if (typeof key !== 'string' || key.length === 0) {
+      return '';
+    }
+
     const keys = key.split('.');
     let value = translations[language];
 
@@ -61,7 +65,8 @@ export const LanguageProvider = ({ children }) => {
     // Replace {{param}} with actual values
     if (typeof result === 'string' && Object.keys(params).length > 0) {
       for (const [param, paramValue] of Object.entries(params)) {
-        result = result.replace(new RegExp(`\\{\\{${param}\\}\\}`, 'g'), paramValue);
+        const escapedParam = param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        result = result.replace(new RegExp(`\\{\\{${escapedParam}\\}\\}`, 'g'), paramValue);
       }
     }
 
