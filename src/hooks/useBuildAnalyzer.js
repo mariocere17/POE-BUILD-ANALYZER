@@ -71,12 +71,16 @@ export const useBuildAnalyzer = () => {
   }, [pobCode, game]);
 
   const handleCopyToClipboard = useCallback(async (item, index) => {
-    const stats = await handleFetchStats(game);
-    // Use ref to get current sellerStatus value
-    const url = await generateTradeURL(item, game, league, sellerStatusRef.current, stats);
-    navigator.clipboard.writeText(url);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 2000);
+    try {
+      const stats = await handleFetchStats(game);
+      const url = await generateTradeURL(item, game, league, sellerStatusRef.current, stats);
+      await navigator.clipboard.writeText(url);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch (err) {
+      console.error('Error copying trade URL:', err);
+      setError('Failed to copy trade URL. Please try again.');
+    }
   }, [game, league, handleFetchStats]);
 
   const handleOpenTradeURL = useCallback(async (item) => {
@@ -100,6 +104,8 @@ export const useBuildAnalyzer = () => {
   // Handle game change
   const handleGameChange = useCallback((newGame) => {
     setGame(newGame);
+    // Clear stat cache to avoid using wrong game's stats
+    statCacheRef.current = null;
   }, []);
 
   // Dismiss game switch notification

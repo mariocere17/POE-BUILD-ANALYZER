@@ -132,10 +132,10 @@ const detectGameFromXml = (xmlDoc, items = []) => {
   ).toLowerCase();
 
   if (ascendancy) {
-    if (POE2_ASCENDANCIES.some(a => ascendancy.includes(a))) {
+    if (POE2_ASCENDANCIES.some(a => ascendancy === a)) {
       return 'poe2';
     }
-    if (POE1_ASCENDANCIES.some(a => ascendancy.includes(a))) {
+    if (POE1_ASCENDANCIES.some(a => ascendancy === a)) {
       return 'poe1';
     }
   }
@@ -312,8 +312,8 @@ export const parsePoB = async (code) => {
       evasion: evasionMatch ? parseInt(evasionMatch[1]) : null
     };
 
-    // Detectar corrupción
-    const corrupted = itemText.includes('Corrupted');
+    // Detectar corrupción (check standalone line, not substring in mod text)
+    const corrupted = lines.some(l => l === 'Corrupted');
 
     // Extraer sockets/runas
     const socketsMatch = itemText.match(/Sockets: (.+)/);

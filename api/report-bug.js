@@ -7,7 +7,7 @@ const formidable = require('formidable');
 const fs = require('fs').promises;
 const FormData = require('form-data');
 const fetch = require('node-fetch');
-const { getClientIp, isValidImageMagicBytes } = require('./utils/security');
+const { getClientIp, isValidImageMagicBytes, setCorsHeaders } = require('./utils/security');
 
 // In-memory store for rate limiting (resets when function cold-starts)
 const rateLimitStore = new Map();
@@ -152,19 +152,8 @@ async function sendToDiscord(webhookUrl, payload, screenshotFile = null) {
 }
 
 module.exports = async function handler(req, res) {
-  // CORS headers
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'https://poe-build-analyzer.vercel.app'
-  ];
-
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // CORS headers with centralized whitelist
+  setCorsHeaders(req, res, ['POST']);
 
   // Handle preflight
   if (req.method === 'OPTIONS') {

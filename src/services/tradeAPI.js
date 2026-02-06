@@ -124,8 +124,8 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
     // Energy Shield
     if (defenceFilters.energyShield?.enabled) {
       const esFilter = {};
-      if (defenceFilters.energyShield.min) esFilter.min = defenceFilters.energyShield.min;
-      if (defenceFilters.energyShield.max) esFilter.max = defenceFilters.energyShield.max;
+      if (defenceFilters.energyShield.min != null) esFilter.min = defenceFilters.energyShield.min;
+      if (defenceFilters.energyShield.max != null) esFilter.max = defenceFilters.energyShield.max;
       if (Object.keys(esFilter).length > 0) {
         query.query.filters.equipment_filters.filters.es = esFilter;
       }
@@ -134,8 +134,8 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
     // Armour
     if (defenceFilters.armour?.enabled) {
       const arFilter = {};
-      if (defenceFilters.armour.min) arFilter.min = defenceFilters.armour.min;
-      if (defenceFilters.armour.max) arFilter.max = defenceFilters.armour.max;
+      if (defenceFilters.armour.min != null) arFilter.min = defenceFilters.armour.min;
+      if (defenceFilters.armour.max != null) arFilter.max = defenceFilters.armour.max;
       if (Object.keys(arFilter).length > 0) {
         query.query.filters.equipment_filters.filters.ar = arFilter;
       }
@@ -144,8 +144,8 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
     // Evasion
     if (defenceFilters.evasion?.enabled) {
       const evFilter = {};
-      if (defenceFilters.evasion.min) evFilter.min = defenceFilters.evasion.min;
-      if (defenceFilters.evasion.max) evFilter.max = defenceFilters.evasion.max;
+      if (defenceFilters.evasion.min != null) evFilter.min = defenceFilters.evasion.min;
+      if (defenceFilters.evasion.max != null) evFilter.max = defenceFilters.evasion.max;
       if (Object.keys(evFilter).length > 0) {
         query.query.filters.equipment_filters.filters.ev = evFilter;
       }
@@ -228,10 +228,10 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
           const minKey = `enchant_${i}`;
           const maxKey = `enchant_${i}`;
 
-          if (item.filters.minValues[minKey] || item.filters.maxValues[maxKey]) {
+          if (item.filters.minValues[minKey] != null || item.filters.maxValues[maxKey] != null) {
             filter.value = {};
-            if (item.filters.minValues[minKey]) filter.value.min = item.filters.minValues[minKey];
-            if (item.filters.maxValues[maxKey]) filter.value.max = item.filters.maxValues[maxKey];
+            if (item.filters.minValues[minKey] != null) filter.value.min = item.filters.minValues[minKey];
+            if (item.filters.maxValues[maxKey] != null) filter.value.max = item.filters.maxValues[maxKey];
           }
 
           statFilters.push(filter);
@@ -251,10 +251,10 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
           const minKey = `implicit_${i}`;
           const maxKey = `implicit_${i}`;
 
-          if (item.filters.minValues[minKey] || item.filters.maxValues[maxKey]) {
+          if (item.filters.minValues[minKey] != null || item.filters.maxValues[maxKey] != null) {
             filter.value = {};
-            if (item.filters.minValues[minKey]) filter.value.min = item.filters.minValues[minKey];
-            if (item.filters.maxValues[maxKey]) filter.value.max = item.filters.maxValues[maxKey];
+            if (item.filters.minValues[minKey] != null) filter.value.min = item.filters.minValues[minKey];
+            if (item.filters.maxValues[maxKey] != null) filter.value.max = item.filters.maxValues[maxKey];
           }
 
           statFilters.push(filter);
@@ -270,7 +270,7 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
       if (item.filters.selectedExplicits[i]) {
         // Transform "reduced X" mods to "increased X" with negative value
         const minKey = `explicit_${i}`;
-        const originalValue = item.filters.minValues[minKey] || mod.value;
+        const originalValue = item.filters.minValues[minKey] ?? mod.value;
         const { mod: transformedMod, value: transformedValue, transformed } = transformReducedMod(mod.normalized, originalValue);
 
         // Check if this mod should be searched as fractured
@@ -393,9 +393,15 @@ export const generateTradeURL = async (item, game, league, sellerStatus, stats) 
       });
     }
 
-    // Añadir COUNT groups para stats con variantes local/global
+    // Añadir COUNT groups para stats con variantes local/global (validate first)
     countGroups.forEach(countGroup => {
-      query.query.stats.push(countGroup);
+      const validFilters = countGroup.filters.filter(f => validateStatId(stats, f.id));
+      if (validFilters.length > 0) {
+        query.query.stats.push({
+          ...countGroup,
+          filters: validFilters
+        });
+      }
     });
   }
 

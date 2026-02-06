@@ -8,7 +8,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3001',
   'https://poe-build-analyzer.vercel.app',
   // Add production domain variations
-  /^https:\/\/poe-build-analyzer.*\.vercel\.app$/,
+  /^https:\/\/poe-build-analyzer(-[a-z0-9]+)*\.vercel\.app$/,
 ];
 
 // Valid leagues whitelist

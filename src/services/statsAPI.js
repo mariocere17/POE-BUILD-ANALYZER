@@ -758,7 +758,7 @@ export const findStatId = (stats, normalizedMod, modType, isRuneEnchant = false)
   if (!stats || !stats.result) return null;
 
   // 0. Check if this is an unsearchable local mod (flask mods, etc.)
-  if (UNSEARCHABLE_MODS.some(mod => normalizedMod === mod || normalizedMod.includes(mod.replace('#', '')))) {
+  if (UNSEARCHABLE_MODS.some(mod => normalizedMod === mod)) {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[STATS] Skipping unsearchable local mod: "${normalizedMod}"`);
     }

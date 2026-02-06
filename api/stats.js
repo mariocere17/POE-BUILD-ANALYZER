@@ -51,11 +51,7 @@ module.exports = async (req, res) => {
           const buffer = Buffer.concat(chunks);
           const errorText = buffer.toString();
           console.error(`PoE API error: ${response.statusCode} - ${errorText}`);
-          return res.status(response.statusCode).json({
-            error: 'PoE API error',
-            statusCode: response.statusCode,
-            details: errorText
-          });
+          return res.status(502).json(createErrorResponse('PoE API error', new Error(errorText)));
         }
 
         const buffer = Buffer.concat(chunks);
@@ -72,6 +68,6 @@ module.exports = async (req, res) => {
       }
     });
   }).on('error', (error) => {
-    res.status(500).json({ error: 'Request failed' });
+    res.status(500).json(createErrorResponse('Request failed', error));
   });
 };

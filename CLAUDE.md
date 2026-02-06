@@ -5,6 +5,51 @@ PoE Build Analyzer es una aplicación React que genera enlaces de trade automát
 
 ---
 
+## Session Work (2026-02-06) - Security Audit & Bug Fixes
+
+### Overview
+
+Comprehensive project analysis with 5 parallel agents (Security, Frontend, Services, Dependencies, Architecture). Applied 13 fixes across 10 files.
+
+### Security Fixes
+
+| Fix | File | Details |
+|-----|------|---------|
+| CORS wildcard removed from vercel.json | `vercel.json` | Removed `headers` section with `Access-Control-Allow-Origin: *` that overrode `security.js` whitelist |
+| CORS regex tightened | `api/utils/security.js` | Changed `.*` to `(-[a-z0-9]+)*` to prevent subdomain spoofing |
+| CORS centralized in report-bug | `api/report-bug.js` | Replaced custom CORS logic with `setCorsHeaders()` from security module |
+| Error response sanitized | `api/stats.js` | Used `createErrorResponse()` instead of raw error details |
+| Category injection prevention | `api/poe2scout/items-multi.js` | Added `VALID_CATEGORIES` whitelist, max 15 limit, `encodeURIComponent()` |
+
+### Bug Fixes
+
+| Fix | File | Details |
+|-----|------|---------|
+| Stat cache stale on game switch | `src/hooks/useBuildAnalyzer.js` | Clear `statCacheRef.current = null` in `handleGameChange` |
+| Clipboard error unhandled | `src/hooks/useBuildAnalyzer.js` | Wrapped `handleCopyToClipboard` in try/catch with await |
+| Ascendancy false positive matches | `src/services/pobParser.js` | Changed `.includes()` to `===` for exact match |
+| Corrupted false positive | `src/services/pobParser.js` | Changed `itemText.includes('Corrupted')` to `lines.some(l => l === 'Corrupted')` |
+| Zero-value filters dropped | `src/services/tradeAPI.js` | Changed truthiness checks to `!= null` for defence/enchant/implicit min/max values |
+| Zero-value mod values | `src/services/tradeAPI.js` | Changed `\|\|` to `??` for `originalValue` |
+| COUNT groups unvalidated | `src/services/tradeAPI.js` | Added `validateStatId()` check before adding COUNT groups to query |
+| UNSEARCHABLE_MODS substring match | `src/services/statsAPI.js` | Removed `.includes()` fallback, exact match only |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `vercel.json` | Removed CORS wildcard headers section |
+| `api/utils/security.js` | Tightened CORS regex |
+| `api/report-bug.js` | Centralized CORS via `setCorsHeaders()` |
+| `api/stats.js` | Error responses use `createErrorResponse()` |
+| `api/poe2scout/items-multi.js` | Category whitelist validation |
+| `src/hooks/useBuildAnalyzer.js` | Stat cache clear on game switch, clipboard error handling |
+| `src/services/pobParser.js` | Exact match for ascendancy and corrupted detection |
+| `src/services/statsAPI.js` | Exact match only for unsearchable mods |
+| `src/services/tradeAPI.js` | Null-safe value checks, COUNT group validation |
+
+---
+
 ## Session Work (2026-01-27) - Rune Mods Support (PoE2)
 
 ### Problem

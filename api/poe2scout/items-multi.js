@@ -29,12 +29,21 @@ module.exports = async (req, res) => {
     });
   }
 
-  const categoryList = categories.split(',').map(c => c.trim());
+  const VALID_CATEGORIES = ['currency', 'abyss', 'ritual', 'distilled-emotions', 'fragments', 'essences', 'catalysts', 'runes', 'soul-cores', 'ultimatum', 'expedition', 'breach', 'delirium', 'uniques'];
+  const categoryList = categories.split(',').map(c => c.trim()).filter(c => VALID_CATEGORIES.includes(c));
+
+  if (categoryList.length === 0) {
+    return res.status(400).json({ error: 'No valid categories provided' });
+  }
+
+  if (categoryList.length > 15) {
+    return res.status(400).json({ error: 'Too many categories (max 15)' });
+  }
 
   try {
     // Función helper para fetch de una categoría
     const fetchCategory = async (category) => {
-      const url = `https://poe2scout.com/api/items/currency/${category}?league=${encodeURIComponent(league)}&perPage=100`;
+      const url = `https://poe2scout.com/api/items/currency/${encodeURIComponent(category)}?league=${encodeURIComponent(league)}&perPage=100`;
 
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error(`Timeout for ${category}`)), 5000);
