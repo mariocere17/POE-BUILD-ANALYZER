@@ -214,6 +214,64 @@ function safeDecompress(buffer, encoding, zlib) {
   return data;
 }
 
+// --- Rate Limiting ---
+
+// Centralized in-memory rate limit store: Map<string, number[]>
+// Key format: "endpoint:ip", Value: array of timestamps
+const rateLimitStore = new Map();
+
+// Cleanup interval: remove expired entries every 5 minutes
+const CLEANUP_INTERVAL = 5 * 60 * 1000;
+let lastCleanup = Date.now();
+
+function cleanupExpiredEntries() {
+  const now = Date.now();
+  if (now - lastCleanup < CLEANUP_INTERVAL) return;
+  lastCleanup = now;
+
+  for (const [key, timestamps] of rateLimitStore.entries()) {
+    // Keep entries from the last hour (max window)
+    const valid = timestamps.filter(t => now - t < 3600000);
+    if (valid.length === 0) {
+      rateLimitStore.delete(key);
+    } else {
+      rateLimitStore.set(key, valid);
+    }
+  }
+}
+
+/**
+ * Check rate limit for an IP on a specific endpoint
+ * @param {string} ip - Client IP address
+ * @param {string} endpoint - Endpoint identifier (e.g. 'stats', 'pob-fetch')
+ * @param {number} limit - Max requests allowed in the window
+ * @param {number} windowMs - Time window in milliseconds
+ * @returns {boolean} - true if request is allowed, false if rate limited
+ */
+function checkRateLimit(ip, endpoint, limit, windowMs) {
+  cleanupExpiredEntries();
+
+  const now = Date.now();
+  const key = `${endpoint}:${ip}`;
+
+  if (!rateLimitStore.has(key)) {
+    rateLimitStore.set(key, [now]);
+    return true;
+  }
+
+  const timestamps = rateLimitStore.get(key);
+  const valid = timestamps.filter(t => now - t < windowMs);
+
+  if (valid.length >= limit) {
+    rateLimitStore.set(key, valid);
+    return false;
+  }
+
+  valid.push(now);
+  rateLimitStore.set(key, valid);
+  return true;
+}
+
 /**
  * Validate image magic bytes
  * @param {Buffer} buffer - File buffer
@@ -268,4 +326,5 @@ module.exports = {
   isDecompressedSizeSafe,
   safeDecompress,
   isValidImageMagicBytes,
+  checkRateLimit,
 };

@@ -1,6 +1,6 @@
 const https = require('https');
 const zlib = require('zlib');
-const { setCorsHeaders, isValidLeague, isValidGame, safeDecompress, createErrorResponse } = require('../utils/security');
+const { setCorsHeaders, isValidLeague, isValidGame, safeDecompress, createErrorResponse, getClientIp, checkRateLimit } = require('../utils/security');
 
 // Función para seguir redirects manualmente (para poe.ninja)
 const fetchWithRedirect = (targetUrl, maxRedirects = 5) => {
@@ -47,6 +47,13 @@ module.exports = async (req, res) => {
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Rate limit: 30 requests per minute per IP
+  const ip = getClientIp(req);
+  if (!checkRateLimit(ip, 'poe2scout-currency', 30, 60000)) {
+    res.setHeader('Retry-After', '60');
+    return res.status(429).json({ error: 'Too many requests. Try again later.' });
   }
 
   const league = req.query.league || 'Fate of the Vaal';

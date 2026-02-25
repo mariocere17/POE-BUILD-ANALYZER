@@ -7,14 +7,7 @@ const formidable = require('formidable');
 const fs = require('fs').promises;
 const FormData = require('form-data');
 const fetch = require('node-fetch');
-const { getClientIp, isValidImageMagicBytes, setCorsHeaders } = require('./utils/security');
-
-// In-memory store for rate limiting (resets when function cold-starts)
-const rateLimitStore = new Map();
-
-// Rate limit: 5 reports per IP per hour
-const RATE_LIMIT = 5;
-const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in ms
+const { getClientIp, isValidImageMagicBytes, setCorsHeaders, checkRateLimit } = require('./utils/security');
 
 // Vercel configuration - disable body parsing
 module.exports.config = {
@@ -22,30 +15,6 @@ module.exports.config = {
     bodyParser: false,
   },
 };
-
-function checkRateLimit(ip) {
-  const now = Date.now();
-  const key = ip;
-
-  if (!rateLimitStore.has(key)) {
-    rateLimitStore.set(key, []);
-  }
-
-  const timestamps = rateLimitStore.get(key);
-
-  // Remove old timestamps outside the window
-  const validTimestamps = timestamps.filter(t => now - t < RATE_WINDOW);
-
-  if (validTimestamps.length >= RATE_LIMIT) {
-    return false; // Rate limit exceeded
-  }
-
-  // Add current timestamp
-  validTimestamps.push(now);
-  rateLimitStore.set(key, validTimestamps);
-
-  return true;
-}
 
 function sanitizeInput(input) {
   if (typeof input !== 'string') return '';
@@ -177,8 +146,9 @@ module.exports = async function handler(req, res) {
     // Get IP for rate limiting (using verified Vercel header when available)
     const ip = getClientIp(req);
 
-    // Check rate limit
-    if (!checkRateLimit(ip)) {
+    // Check rate limit: 5 reports per hour per IP
+    if (!checkRateLimit(ip, 'report-bug', 5, 3600000)) {
+      res.setHeader('Retry-After', '3600');
       return res.status(429).json({
         error: 'Rate limit exceeded. Please wait before submitting another report.'
       });

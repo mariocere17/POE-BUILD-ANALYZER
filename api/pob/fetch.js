@@ -1,6 +1,6 @@
 const https = require('https');
 const zlib = require('zlib');
-const { setCorsHeaders, safeDecompress, createErrorResponse } = require('../utils/security');
+const { setCorsHeaders, safeDecompress, createErrorResponse, getClientIp, checkRateLimit } = require('../utils/security');
 
 module.exports = async (req, res) => {
   // CORS headers with whitelist
@@ -12,6 +12,13 @@ module.exports = async (req, res) => {
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Rate limit: 20 requests per minute per IP
+  const ip = getClientIp(req);
+  if (!checkRateLimit(ip, 'pob-fetch', 20, 60000)) {
+    res.setHeader('Retry-After', '60');
+    return res.status(429).json({ error: 'Too many requests. Try again later.' });
   }
 
   const url = req.query.url;

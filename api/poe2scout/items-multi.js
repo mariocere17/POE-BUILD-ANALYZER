@@ -1,6 +1,6 @@
 const https = require('https');
 const zlib = require('zlib');
-const { setCorsHeaders, isValidLeague, safeDecompress, createErrorResponse } = require('../utils/security');
+const { setCorsHeaders, isValidLeague, safeDecompress, createErrorResponse, getClientIp, checkRateLimit } = require('../utils/security');
 
 module.exports = async (req, res) => {
   // CORS headers with whitelist
@@ -12,6 +12,13 @@ module.exports = async (req, res) => {
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Rate limit: 15 requests per minute per IP (amplification risk: up to 15 parallel fetches)
+  const ip = getClientIp(req);
+  if (!checkRateLimit(ip, 'poe2scout-items', 15, 60000)) {
+    res.setHeader('Retry-After', '60');
+    return res.status(429).json({ error: 'Too many requests. Try again later.' });
   }
 
   const league = req.query.league || 'Fate of the Vaal';
