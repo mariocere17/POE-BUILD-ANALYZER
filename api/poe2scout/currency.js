@@ -73,6 +73,8 @@ module.exports = async (req, res) => {
     // poe.ninja usa nombres cortos para las ligas de PoE1
     // Mapear nombres completos a nombres cortos
     const POE1_LEAGUE_MAPPING = {
+      'Mirage': 'Mirage',
+      'Hardcore Mirage': 'Hardcore Mirage',
       'Keepers of the Flame': 'Keepers',
       'Hardcore Keepers of the Flame': 'Hardcore Keepers',
       // Agregar más mapeos según sea necesario

@@ -25,11 +25,13 @@ const VALID_LEAGUES = {
     'HC Rise of the Abyssal',
   ],
   poe1: [
-    'Keepers of the Flame',
-    'Hardcore Keepers of the Flame',
+    'Mirage',
+    'Hardcore Mirage',
     'Standard',
     'Hardcore',
     // Previous leagues
+    'Keepers of the Flame',
+    'Hardcore Keepers of the Flame',
     'Settlers of Kalguur',
     'Hardcore Settlers of Kalguur',
     'Necropolis',

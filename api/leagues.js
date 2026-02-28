@@ -36,8 +36,8 @@ module.exports = async (req, res) => {
       { id: 'Standard', description: 'Standard League' }
     ],
     poe1: [
-      { id: 'Keepers of the Flame', description: 'Keepers of the Flame' },
-      { id: 'Hardcore Keepers of the Flame', description: 'Hardcore Keepers' },
+      { id: 'Mirage', description: 'Mirage' },
+      { id: 'Hardcore Mirage', description: 'Hardcore Mirage' },
       { id: 'Standard', description: 'Standard League' }
     ]
   };
